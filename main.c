@@ -10,7 +10,7 @@
 
 int main()
 {
-    struct Piece board[BOARD_SIZE * BOARD_SIZE];
+    Piece board[BOARD_SIZE * BOARD_SIZE];
     int whiteRecord[NumberOfChessType];
     int blackRecord[NumberOfChessType];
     bool isWhiteTurns;
@@ -43,19 +43,17 @@ int main()
                 break;
         }
 
-        struct InputProps input = getUserInput(isWhiteTurns);
+        InputProps input = getUserInput(isWhiteTurns);
 
         // check if the player wants to quit or restart the game;
         if (input.quit)
         {
             printf("Are you sure you want to quit the game? (Press 'y' to quit or 'enter' to cancel...)\n");
             while ((getchar()) != '\n')
-                ;
+                ; // null statement
             char result = getchar();
             if (result == 'y' || result == 'Y')
                 break;
-            else
-                continue;
         }
         else if (input.restart)
         {
@@ -65,26 +63,21 @@ int main()
             char result = getchar();
             if (result == 'y' || result == 'Y')
                 init(board, whiteRecord, blackRecord, &isWhiteTurns);
-            continue;
         }
         else if (input.save)
         {
             saveGame(board, whiteRecord, blackRecord, isWhiteTurns);
-            continue;
         }
         else if (input.load)
         {
             const char *saveFiles[MAX_SAVE_FILES] = { NULL };
             if (getSaveFiles(saveFiles)) {
                 char fileName[INPUT_BUFFER_SIZE] = { "" };
-                saveFilesMenu(saveFiles, fileName);
-                loadGame(fileName, board, whiteRecord, blackRecord, &isWhiteTurns);
+                if (saveFilesMenu(saveFiles, fileName));
+                    loadGame(fileName, board, whiteRecord, blackRecord, &isWhiteTurns);
             }
-            continue;
         }
-
-        // check if the input or move is valid or not
-        if (!input.invalid && move(input, board, isWhiteTurns, whiteRecord, blackRecord))
+        else if (!input.invalid && move(input, board, isWhiteTurns, whiteRecord, blackRecord))
         {
             isWhiteTurns = !isWhiteTurns;
         }

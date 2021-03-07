@@ -15,22 +15,22 @@ enum ChessType
     NumberOfChessType
 };
 
-struct Piece
+typedef struct 
 {
     enum ChessType type;
     bool isWhite;
-};
+} Piece;
 
-struct Position
+typedef struct 
 {
     int x;
     int y;
-};
+} Position;
 
-void init(struct Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns);
+void init(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns);
 
-bool move(struct InputProps input, struct Piece *board, bool isWhiteTurns, int *whiteRecord, int *blackRecord);
+bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, int *blackRecord);
 
 int posStrToIndex(const char *pos);
 
-struct Position posStrToPos(const char *posStr);
+Position posStrToPos(const char *posStr);

@@ -5,7 +5,7 @@
 #include "game.h"
 #include "persistance.h"
 
-void render(const struct Piece *board, int *whiteRecord, int *blackRecord, bool isWhiteTurns)
+void render(const Piece *board, int *whiteRecord, int *blackRecord, bool isWhiteTurns)
 {
     system("clear");
     printf("Black left: ♙ x%d ♘ x%d ♗ x%d ♖ x%d ♕ x%d ♔ x%d\n",

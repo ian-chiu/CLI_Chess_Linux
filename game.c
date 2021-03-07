@@ -4,21 +4,23 @@
 #include <string.h>
 #include <math.h>
 
+inline
 int posStrToIndex(const char *pos)
 {
     return abs(pos[1] - 48 - 8) * BOARD_SIZE + (pos[0] - 97);
 }
 
-struct Position posStrToPos(const char *posStr)
+Position posStrToPos(const char *posStr)
 {
-    struct Position pos = {posStr[0] - 97, abs(posStr[1] - 48 - 8)};
+    Position pos = {posStr[0] - 97, abs(posStr[1] - 48 - 8)};
     return pos;
 }
 
-void init(struct Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
+void init(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
 {
     *isWhiteTurns = true;
 
+    whiteRecord[None] = 0;
     whiteRecord[Pawn] = 8;
     whiteRecord[Knight] = 2;
     whiteRecord[Bishop] = 2;
@@ -26,6 +28,7 @@ void init(struct Piece *board, int *whiteRecord, int *blackRecord, bool *isWhite
     whiteRecord[Queen] = 1;
     whiteRecord[King] = 1;
 
+    blackRecord[None] = 0;
     blackRecord[Pawn] = 8;
     blackRecord[Knight] = 2;
     blackRecord[Bishop] = 2;
@@ -116,7 +119,7 @@ void init(struct Piece *board, int *whiteRecord, int *blackRecord, bool *isWhite
     board[posStrToIndex("e8")].type = King;
 }
 
-bool move(struct InputProps input, struct Piece *board, bool isWhiteTurns, int *whiteRecord, int *blackRecord)
+bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, int *blackRecord)
 {
     if (input.castle)
     {
@@ -129,7 +132,7 @@ bool move(struct InputProps input, struct Piece *board, bool isWhiteTurns, int *
     char from[3];
     strcpy(from, input.from);
     int fromIndex = posStrToIndex(from);
-    struct Position fromPos = posStrToPos(from);
+    Position fromPos = posStrToPos(from);
 
     if (board[fromIndex].type == None)
     {
@@ -172,7 +175,7 @@ bool move(struct InputProps input, struct Piece *board, bool isWhiteTurns, int *
     char to[3];
     strcpy(to, input.to);
     int toIndex = posStrToIndex(to);
-    struct Position toPos = posStrToPos(to);
+    Position toPos = posStrToPos(to);
 
     if (board[toIndex].type != None && board[fromIndex].isWhite == board[toIndex].isWhite)
     {

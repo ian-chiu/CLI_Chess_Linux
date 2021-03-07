@@ -27,7 +27,7 @@ bool getSaveFiles(const char **saveFiles)
     return true;
 }
 
-void saveGame(const struct Piece *board, const int *whiteRecord, const int *blackRecord, bool isWhiteTurns)
+void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord, bool isWhiteTurns)
 {
     char name[256];
     printf("Please input the name of the save file: ");
@@ -118,7 +118,7 @@ void saveGame(const struct Piece *board, const int *whiteRecord, const int *blac
     }
 }
 
-void loadGame(const char *fileName, struct Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
+void loadGame(const char *fileName, Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
 {
     FILE *fp = NULL;
     char filepath[INPUT_BUFFER_SIZE] = { "" };

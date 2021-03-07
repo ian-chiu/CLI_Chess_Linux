@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #define INPUT_BUFFER_SIZE 256
 
-struct InputProps
+typedef struct
 {
     char from[3];
     char to[3];
@@ -14,6 +14,6 @@ struct InputProps
     bool castle;
     bool save;
     bool load;
-};
+} InputProps;
 
-struct InputProps getUserInput(bool isWhiteTurns);
+InputProps getUserInput(bool isWhiteTurns);

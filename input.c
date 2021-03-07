@@ -6,9 +6,9 @@
 #include "input.h"
 #include "game.h"
 
-struct InputProps getUserInput(bool isWhiteTurns)
+InputProps getUserInput(bool isWhiteTurns)
 {
-    struct InputProps result;
+    InputProps result;
     result.quit = false;
     result.restart = false;
     result.invalid = false;
