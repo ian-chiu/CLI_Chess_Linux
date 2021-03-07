@@ -69,7 +69,7 @@ int main()
         }
         else if (input.save)
         {
-            saveGame(board, whiteRecord, blackRecord);
+            saveGame(board, whiteRecord, blackRecord, isWhiteTurns);
             continue;
         }
         else if (input.load)
@@ -80,7 +80,7 @@ int main()
             if (saveFiles.length) {
                 char fileName[INPUT_BUFFER_SIZE];
                 saveFilesMenu(&saveFiles, fileName);
-                loadGame(fileName, board, whiteRecord, blackRecord);
+                loadGame(fileName, board, whiteRecord, blackRecord, &isWhiteTurns);
             }
             continue;
         }

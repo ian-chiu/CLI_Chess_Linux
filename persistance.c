@@ -32,7 +32,7 @@ bool getSaveFiles(FileNameArray *saveFiles)
     return true;
 }
 
-void saveGame(const struct Piece *board, const int *whiteRecord, const int *blackRecord)
+void saveGame(const struct Piece *board, const int *whiteRecord, const int *blackRecord, bool isWhiteTurns)
 {
     char name[256];
     printf("Please input the name of the save file: ");
@@ -99,6 +99,9 @@ void saveGame(const struct Piece *board, const int *whiteRecord, const int *blac
         fprintf(fp, "\t   a  b  c  d  e  f  g  h\n\n");
         
         fprintf(fp, "--------------------------DATA-------------------------\n");
+        fprintf(fp, "#ISWHITETURNS\n");
+        fprintf(fp, "%d\n", isWhiteTurns);
+
         fprintf(fp, "#WHITERECORD\n");
         for (int i = 0; i < NumberOfChessType; i++) 
             fprintf(fp, "%d\n", whiteRecord[i]);
@@ -120,7 +123,7 @@ void saveGame(const struct Piece *board, const int *whiteRecord, const int *blac
     }
 }
 
-void loadGame(const char *fileName, struct Piece *board, int *whiteRecord, int *blackRecord)
+void loadGame(const char *fileName, struct Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
 {
     FILE *fp = NULL;
     char filepath[INPUT_BUFFER_SIZE] = { "" };
@@ -141,6 +144,14 @@ void loadGame(const char *fileName, struct Piece *board, int *whiteRecord, int *
             fscanf(fp, "%d", &board[i].type);
             fscanf(fp, "%d", &board[i].isWhite);
         }
+
+        rewind(fp);
+        while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#ISWHITETURNS\n") != 0) 
+        {
+            // printf("Retrieved line of length %zu:\n", read);
+            // printf("%s", line);
+        }
+        fscanf(fp, "%d", isWhiteTurns);
 
         rewind(fp);
         while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#WHITERECORD\n") != 0) 

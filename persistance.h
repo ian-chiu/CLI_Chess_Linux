@@ -12,8 +12,8 @@ struct FileNameArray
 } FileNameArray;
 
 
-void saveGame(const struct Piece *board, const int *whiteRecord, const int *blackRecord);
+void saveGame(const struct Piece *board, const int *whiteRecord, const int *blackRecord, bool isWhiteTurns);
 
 bool getSaveFiles(FileNameArray *saveFiles);
 
-void loadGame(const char *fileName, struct Piece *board, int *whiteRecord, int *blackRecord);
+void loadGame(const char *fileName, struct Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns);
