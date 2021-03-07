@@ -6,25 +6,20 @@
 #include "game.h"
 #include "input.h"
 
-bool getSaveFiles(FileNameArray *saveFiles)
+bool getSaveFiles(const char **saveFiles)
 {
     struct dirent *entry;
     DIR *dir = opendir("./save");
     if (!dir) {
-        printf("ERROR: Cannot open './save' directory!");
+        printf("ERROR: Cannot open './save' directory!\n");
         return false;
     }
-    int length = 0;
-    while ((entry = readdir(dir)) != NULL) 
-        if (entry->d_name[0] != '.')
-            length++;
-    saveFiles->length = length;
 
-    rewinddir(dir);
     int index = 0;
-    while ((entry = readdir(dir)) != NULL) {
+    while ((entry = readdir(dir)) != NULL) 
+    {
         if (entry->d_name[0] != '.')
-            saveFiles->data[index] = entry->d_name;
+            saveFiles[index] = entry->d_name;
         index++;
     }
     

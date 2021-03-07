@@ -63,18 +63,21 @@ void render(const struct Piece *board, int *whiteRecord, int *blackRecord, bool 
     isWhiteTurns ? printf("\t   a  b  c  d  e  f  g  h\n\n") : printf("\t   h  g  f  e  d  c  b  a\n\n");
 }
 
-bool saveFilesMenu(FileNameArray *saveFiles, char *filename)
+bool saveFilesMenu(const char **saveFiles, char *filename)
 {
     system("clear");
-    for (int i = 0; i < saveFiles->length; i++) 
-        printf("%d. %s\n", i+1, saveFiles->data[i]);
+    for (int i = 0; ; i++) 
+    {
+        if (!saveFiles[i])
+            break;
+        printf("%d. %s\n", i+1, saveFiles[i]);
+    }
     
     printf("Please input the number of the file: ");
     unsigned int num = 0;
-    int status = scanf("%u", &num);
-    if (status) 
+    if (scanf("%u", &num)) 
     {
-        sprintf(filename, saveFiles->data[num - 1]);
+        strcpy(filename, saveFiles[num - 1]);
         return true;
     }
     else 

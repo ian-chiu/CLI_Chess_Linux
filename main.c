@@ -74,12 +74,10 @@ int main()
         }
         else if (input.load)
         {
-            FileNameArray saveFiles;
-            saveFiles.length = 0;
-            getSaveFiles(&saveFiles);
-            if (saveFiles.length) {
-                char fileName[INPUT_BUFFER_SIZE];
-                saveFilesMenu(&saveFiles, fileName);
+            const char *saveFiles[MAX_SAVE_FILES] = { NULL };
+            if (getSaveFiles(saveFiles)) {
+                char fileName[INPUT_BUFFER_SIZE] = { "" };
+                saveFilesMenu(saveFiles, fileName);
                 loadGame(fileName, board, whiteRecord, blackRecord, &isWhiteTurns);
             }
             continue;
