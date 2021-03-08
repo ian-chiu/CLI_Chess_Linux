@@ -19,8 +19,10 @@ bool getSaveFiles(const char **saveFiles)
     while ((entry = readdir(dir)) != NULL) 
     {
         if (entry->d_name[0] != '.')
+        {
             saveFiles[index] = entry->d_name;
-        index++;
+            index++;
+        } 
     }
     
     closedir(dir);

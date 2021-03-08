@@ -115,7 +115,7 @@ void startMenu()
     printf("p.s.\tFor Example, for a white pawn at the initial position a2, if we input\n"
            "\t'a2 a4', then we move the pawn from a2 to a4.\n");
     printf("------------------------------------------------------------------------------\n");
-    printf("Press any key to start...");
+    printf("Press 'enter' to start...");
     getchar();
 }
 

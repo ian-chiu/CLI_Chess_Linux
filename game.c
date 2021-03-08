@@ -191,191 +191,191 @@ bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, i
     {
         switch (board[fromIndex].type)
         {
-        case None:
-            printf("ERROR: There is no any piece at %s\n", from);
-            break;
-        case Pawn:
-        {
-            if (board[toIndex].type == None) // Move to empty space
+            case None:
+                printf("ERROR: There is no any piece at %s\n", from);
+                break;
+            case Pawn:
+            {
+                if (board[toIndex].type == None) // Move to empty space
+                {
+                    if (fromPos.x == toPos.x)
+                    {
+                        if (isWhiteTurns)
+                        {
+                            if (toPos.y == fromPos.y - 1 || (from[1] == '2' && toPos.y == fromPos.y - 2))
+                                success = true;
+                        }
+                        else
+                        {
+                            if (toPos.y == fromPos.y + 1 || (from[1] == '7' && toPos.y == fromPos.y + 2))
+                                success = true;
+                        }
+                    }
+                    // en passant
+                    int enemyIndex = fromPos.y * BOARD_SIZE + toPos.x;
+                    bool hasEnemy = board[enemyIndex].type != None;
+                    if (hasEnemy && abs(fromPos.x - toPos.x) == 1)
+                    {
+                        if (isWhiteTurns)
+                        {
+                            if (from[1] == '5' && toPos.y == fromPos.y - 1)
+                            {
+                                success = true;
+                                blackRecord[board[enemyIndex].type] -= 1;
+                                board[enemyIndex].type = None;
+                            }
+                        }
+                        else
+                        {
+                            if (from[1] == '4' && toPos.y == fromPos.y + 1)
+                            {
+                                success = true;
+                                whiteRecord[board[enemyIndex].type] -= 1;
+                                board[enemyIndex].type = None;
+                            }
+                        }
+                    }
+                }
+                else // Attack enemy
+                {
+                    if (abs(fromPos.x - toPos.x) == 1)
+                    {
+                        if (isWhiteTurns)
+                        {
+                            if (toPos.y == fromPos.y - 1)
+                                success = true;
+                        }
+                        else
+                        {
+                            if (toPos.y == fromPos.y + 1)
+                                success = true;
+                        }
+                    }
+                }
+                if (success == false)
+                    printf("ERROR: Invalid move of Pawn!\n");
+                break;
+            }
+            case Rook:
             {
                 if (fromPos.x == toPos.x)
                 {
-                    if (isWhiteTurns)
-                    {
-                        if (toPos.y == fromPos.y - 1 || (from[1] == '2' && toPos.y == fromPos.y - 2))
-                            success = true;
-                    }
-                    else
-                    {
-                        if (toPos.y == fromPos.y + 1 || (from[1] == '7' && toPos.y == fromPos.y + 2))
-                            success = true;
-                    }
+                    success = true; // set default success to true
+                    int commonX = fromPos.x;
+                    for (int i = (int)fmin(fromPos.y, toPos.y) + 1; i < (int)fmax(fromPos.y, toPos.y); i++)
+                        if (board[i * BOARD_SIZE + commonX].type != None)
+                            success = false;
                 }
-                // en passant
-                int enemyIndex = fromPos.y * BOARD_SIZE + toPos.x;
-                bool hasEnemy = board[enemyIndex].type != None;
-                if (hasEnemy && abs(fromPos.x - toPos.x) == 1)
+                if (fromPos.y == toPos.y)
                 {
-                    if (isWhiteTurns)
+                    success = true; // set default success to true
+                    int commonY = fromPos.y;
+                    for (int i = (int)fmin(fromPos.x, toPos.x) + 1; i < (int)fmax(fromPos.x, toPos.x); i++)
+                        if (board[commonY * BOARD_SIZE + i].type != None)
+                            success = false;
+                }
+                if (success == false)
+                    printf("ERROR: Invalid move of Rook!\n");
+                break;
+            }
+            case Bishop:
+            {
+                int offsetY = fromPos.y - toPos.y;
+                int offsetX = fromPos.x - toPos.x;
+                if (abs(offsetX) == abs(offsetY))
+                {
+                    success = true; // set default success to true
+                    int minX = (int)fmin(fromPos.x, toPos.x);
+                    int minY = (int)fmin(fromPos.y, toPos.y);
+                    int maxX = (int)fmax(fromPos.x, toPos.x);
+                    int maxY = (int)fmax(fromPos.y, toPos.y);
+                    int x = minX + 1;
+                    int y = offsetX * offsetY > 0 ? minY + 1 : maxY - 1;
+                    while (x < maxX && y < maxY)
                     {
-                        if (from[1] == '5' && toPos.y == fromPos.y - 1)
+                        if (board[y * BOARD_SIZE + x].type != None)
                         {
-                            success = true;
-                            blackRecord[board[enemyIndex].type] -= 1;
-                            board[enemyIndex].type = None;
+                            success = false;
+                            break;
                         }
+                        x++;
+                        offsetX * offsetY > 0 ? y++ : y--;
+                    
                     }
-                    else
+                }
+                if (success == false)
+                    printf("ERROR: Invalid move of Bishop!\n");
+                break;
+            }
+            case Knight:
+            {
+                int offsetY = abs(fromPos.y - toPos.y);
+                int offsetX = abs(fromPos.x - toPos.x);
+                if ((offsetX == 2 && offsetY == 1) || (offsetY == 2 && offsetX == 1))
+                    success = true;
+                if (success == false)
+                    printf("ERROR: Invalid move of Knight!\n");
+                break;
+            }
+            case Queen:
+            {
+                // check if it applys to rook move
+                if (fromPos.x == toPos.x)
+                {
+                    success = true; // set default success to true
+                    int commonX = fromPos.x;
+                    for (int i = (int)fmin(fromPos.y, toPos.y) + 1; i < (int)fmax(fromPos.y, toPos.y); i++)
+                        if (board[i * BOARD_SIZE + commonX].type != None)
+                            success = false;
+                }
+                if (fromPos.y == toPos.y)
+                {
+                    success = true; // set default success to true
+                    int commonY = fromPos.y;
+                    for (int i = (int)fmin(fromPos.x, toPos.x) + 1; i < (int)fmax(fromPos.x, toPos.x); i++)
+                        if (board[commonY * BOARD_SIZE + i].type != None)
+                            success = false;
+                }
+
+                // check if it applys to bishop move
+                int offsetY = fromPos.y - toPos.y;
+                int offsetX = fromPos.x - toPos.x;
+                if (abs(offsetX) == abs(offsetY))
+                {
+                    success = true; // set default success to true
+                    int minX = (int)fmin(fromPos.x, toPos.x);
+                    int minY = (int)fmin(fromPos.y, toPos.y);
+                    int maxX = (int)fmax(fromPos.x, toPos.x);
+                    int maxY = (int)fmax(fromPos.y, toPos.y);
+                    int x = minX + 1;
+                    int y = offsetX * offsetY > 0 ? minY + 1 : maxY - 1;
+                    while (x < maxX && y < maxY)
                     {
-                        if (from[1] == '4' && toPos.y == fromPos.y + 1)
+                        if (board[y * BOARD_SIZE + x].type != None)
                         {
-                            success = true;
-                            whiteRecord[board[enemyIndex].type] -= 1;
-                            board[enemyIndex].type = None;
+                            success = false;
+                            break;
                         }
+                        x++;
+                        offsetX * offsetY > 0 ? y++ : y--;
+                    
                     }
                 }
-            }
-            else // Attack enemy
-            {
-                if (abs(fromPos.x - toPos.x) == 1)
-                {
-                    if (isWhiteTurns)
-                    {
-                        if (toPos.y == fromPos.y - 1)
-                            success = true;
-                    }
-                    else
-                    {
-                        if (toPos.y == fromPos.y + 1)
-                            success = true;
-                    }
-                }
-            }
-            if (success == false)
-                printf("ERROR: Invalid move of Pawn!\n");
-            break;
-        }
-        case Rook:
-        {
-            if (fromPos.x == toPos.x)
-            {
-                success = true; // set default success to true
-                int commonX = fromPos.x;
-                for (int i = (int)fmin(fromPos.y, toPos.y) + 1; i < (int)fmax(fromPos.y, toPos.y); i++)
-                    if (board[i * BOARD_SIZE + commonX].type != None)
-                        success = false;
-            }
-            if (fromPos.y == toPos.y)
-            {
-                success = true; // set default success to true
-                int commonY = fromPos.y;
-                for (int i = (int)fmin(fromPos.x, toPos.x) + 1; i < (int)fmax(fromPos.x, toPos.x); i++)
-                    if (board[commonY * BOARD_SIZE + i].type != None)
-                        success = false;
-            }
-            if (success == false)
-                printf("ERROR: Invalid move of Rook!\n");
-            break;
-        }
-        case Bishop:
-        {
-            int offsetY = fromPos.y - toPos.y;
-            int offsetX = fromPos.x - toPos.x;
-            if (abs(offsetX) == abs(offsetY))
-            {
-                success = true; // set default success to true
-                int minX = (int)fmin(fromPos.x, toPos.x);
-                int minY = (int)fmin(fromPos.y, toPos.y);
-                int maxX = (int)fmax(fromPos.x, toPos.x);
-                int maxY = (int)fmax(fromPos.y, toPos.y);
-                int x = minX + 1;
-                int y = offsetX * offsetY > 0 ? minY + 1 : maxY - 1;
-                while (x < maxX && y < maxY)
-                {
-                    if (board[y * BOARD_SIZE + x].type != None)
-                    {
-                        success = false;
-                        break;
-                    }
-                    x++;
-                    offsetX * offsetY > 0 ? y++ : y--;
-                   
-                }
-            }
-            if (success == false)
-                printf("ERROR: Invalid move of Bishop!\n");
-            break;
-        }
-        case Knight:
-        {
-            int offsetY = abs(fromPos.y - toPos.y);
-            int offsetX = abs(fromPos.x - toPos.x);
-            if ((offsetX == 2 && offsetY == 1) || (offsetY == 2 && offsetX == 1))
-                success = true;
-            if (success == false)
-                printf("ERROR: Invalid move of Knight!\n");
-            break;
-        }
-        case Queen:
-        {
-            // check if it applys to rook move
-            if (fromPos.x == toPos.x)
-            {
-                success = true; // set default success to true
-                int commonX = fromPos.x;
-                for (int i = (int)fmin(fromPos.y, toPos.y) + 1; i < (int)fmax(fromPos.y, toPos.y); i++)
-                    if (board[i * BOARD_SIZE + commonX].type != None)
-                        success = false;
-            }
-            if (fromPos.y == toPos.y)
-            {
-                success = true; // set default success to true
-                int commonY = fromPos.y;
-                for (int i = (int)fmin(fromPos.x, toPos.x) + 1; i < (int)fmax(fromPos.x, toPos.x); i++)
-                    if (board[commonY * BOARD_SIZE + i].type != None)
-                        success = false;
-            }
 
-            // check if it applys to bishop move
-            int offsetY = fromPos.y - toPos.y;
-            int offsetX = fromPos.x - toPos.x;
-            if (abs(offsetX) == abs(offsetY))
-            {
-                success = true; // set default success to true
-                int minX = (int)fmin(fromPos.x, toPos.x);
-                int minY = (int)fmin(fromPos.y, toPos.y);
-                int maxX = (int)fmax(fromPos.x, toPos.x);
-                int maxY = (int)fmax(fromPos.y, toPos.y);
-                int x = minX + 1;
-                int y = offsetX * offsetY > 0 ? minY + 1 : maxY - 1;
-                while (x < maxX && y < maxY)
-                {
-                    if (board[y * BOARD_SIZE + x].type != None)
-                    {
-                        success = false;
-                        break;
-                    }
-                    x++;
-                    offsetX * offsetY > 0 ? y++ : y--;
-                   
-                }
+                if (success == false)
+                    printf("ERROR: Invalid move of Queen!\n");
+                break;
             }
-
-            if (success == false)
-                printf("ERROR: Invalid move of Queen!\n");
-            break;
-        }
-        case King:
-        {
-            int offsetY = abs(fromPos.y - toPos.y);
-            int offsetX = abs(fromPos.x - toPos.x);
-            if (offsetX + offsetY <= 2)
-                success = true;
-            if (success == false)
-                printf("ERROR: Invalid move of King!\n");
-            break;
-        }
+            case King:
+            {
+                int offsetY = abs(fromPos.y - toPos.y);
+                int offsetX = abs(fromPos.x - toPos.x);
+                if (offsetX + offsetY <= 2)
+                    success = true;
+                if (success == false)
+                    printf("ERROR: Invalid move of King!\n");
+                break;
+            }
         };
     }
 
