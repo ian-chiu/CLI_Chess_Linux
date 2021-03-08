@@ -9,11 +9,9 @@
 bool getSaveFiles(const char **saveFiles)
 {
     struct dirent *entry;
-    DIR *dir = opendir("./save");
-    if (!dir) {
-        printf("ERROR: Cannot open './save' directory!\n");
+    DIR *dir = opendir(SAVE_FOLDER_PATH);
+    if (!dir) 
         return false;
-    }
 
     int index = 0;
     while ((entry = readdir(dir)) != NULL) 
@@ -36,7 +34,7 @@ void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord
     scanf("%s", name);
     FILE *fp = NULL;
     char filepath[INPUT_BUFFER_SIZE] = { "" };
-    strcat(filepath, "./save/");
+    strcat(filepath, SAVE_FOLDER_PATH);
     strcat(filepath, name);
     if ((fp = fopen(filepath, "w")) != NULL) 
     {
@@ -99,7 +97,7 @@ void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord
         fprintf(fp, "#ISWHITETURNS\n");
         fprintf(fp, "%d\n", isWhiteTurns);
 
-        fprintf(fp, "#WHITERECORD\n");
+        fprintf(fp, "\n#WHITERECORD\n");
         for (int i = 0; i < NumberOfChessType; i++) 
             fprintf(fp, "%d\n", whiteRecord[i]);
 
@@ -124,7 +122,7 @@ void loadGame(const char *fileName, Piece *board, int *whiteRecord, int *blackRe
 {
     FILE *fp = NULL;
     char filepath[INPUT_BUFFER_SIZE] = { "" };
-    strcat(filepath, "./save/");
+    strcat(filepath, SAVE_FOLDER_PATH);
     strcat(filepath, fileName);
     if ((fp = fopen(filepath, "r")) != NULL) 
     {

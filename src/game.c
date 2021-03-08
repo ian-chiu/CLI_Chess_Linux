@@ -376,7 +376,12 @@ bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, i
                     printf("ERROR: Invalid move of King!\n");
                 break;
             }
-        };
+            default:
+            {
+                printf("ERROR: No such type of chess piece.");
+            }
+        }
+        
     }
 
     if (success)

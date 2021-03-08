@@ -73,8 +73,14 @@ int main()
             const char *saveFiles[MAX_SAVE_FILES] = { NULL };
             if (getSaveFiles(saveFiles)) {
                 char fileName[INPUT_BUFFER_SIZE] = { "" };
-                if (saveFilesMenu(saveFiles, fileName));
+                if (saveFilesMenu(saveFiles, fileName))
                     loadGame(fileName, board, whiteRecord, blackRecord, &isWhiteTurns);
+            }
+            else {
+                printf("ERROR: Cannot open '../save' directory!\n");
+                while ((getchar()) != '\n') // clear the input buffer
+                    ; // null statement
+                getchar(); // press any key to continue
             }
         }
         else if (!input.invalid && move(input, board, isWhiteTurns, whiteRecord, blackRecord))

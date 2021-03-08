@@ -4,6 +4,8 @@
 
 #define MAX_SAVE_FILES 50
 
+#define SAVE_FOLDER_PATH "./save"
+
 void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord, bool isWhiteTurns);
 
 bool getSaveFiles(const char **saveFiles);
