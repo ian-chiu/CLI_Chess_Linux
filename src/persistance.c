@@ -170,6 +170,6 @@ void loadGame(const char *fileName, Piece *board, int *whiteRecord, int *blackRe
     }
     else 
     {
-        printf("Cannot read %s", filepath);
+        printf("Cannot read %s\n", filepath);
     }
 }

@@ -77,7 +77,7 @@ int main()
                     loadGame(fileName, board, whiteRecord, blackRecord, &isWhiteTurns);
             }
             else {
-                printf("ERROR: Cannot open '../save' directory!\n");
+                printf("ERROR: Cannot open 'save' directory!\n");
                 while ((getchar()) != '\n') // clear the input buffer
                     ; // null statement
                 getchar(); // press any key to continue

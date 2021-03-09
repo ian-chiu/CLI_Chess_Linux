@@ -66,16 +66,18 @@ void render(const Piece *board, int *whiteRecord, int *blackRecord, bool isWhite
 bool saveFilesMenu(const char **saveFiles, char *filename)
 {
     system("clear");
+    int nFiles = 0;
     for (int i = 0; ; i++) 
     {
         if (!saveFiles[i])
             break;
         printf("%d. %s\n", i+1, saveFiles[i]);
+        nFiles++;
     }
     
     printf("Please input the number of the file: ");
     unsigned int num = 0;
-    if (scanf("%u", &num)) 
+    if (scanf("%u", &num) && num < nFiles) 
     {
         strcpy(filename, saveFiles[num - 1]);
         return true;
