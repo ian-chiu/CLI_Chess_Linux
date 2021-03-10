@@ -22,12 +22,11 @@ OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC) : $(OBJS)
-	mkdir -p $(dir $@)
 	$(CC) $(OBJS) -o $@ $(LIBS)
 
 # Build step for C source
+# make a 'build' directory if it is not exsist
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.c
-	# make a 'build' directory if it is not exsist
 	mkdir -p $(dir $@)
 	$(CC) $(PREDEFINED_MACROS) $(CFLAGS) -c $< -o $@ 
 

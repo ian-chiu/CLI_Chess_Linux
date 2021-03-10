@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include "persistance.h"
 #include "game.h"
-#include "input.h"
 
 bool getSaveFiles(const char **saveFiles)
 {

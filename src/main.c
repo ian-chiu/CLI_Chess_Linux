@@ -4,8 +4,6 @@
 // TODO: prev move message
 #include <stdio.h>
 #include "game.h"
-#include "input.h"
-#include "interface.h"
 #include "persistance.h"
 
 int main()
@@ -24,75 +22,39 @@ int main()
         render(board, whiteRecord, blackRecord, isWhiteTurns);
 
         // check if a winner appears
-        if (whiteRecord[King] <= 0 || blackRecord[King] <= 0)
+        if (hasWinner(whiteRecord, blackRecord))
         {
-            if (whiteRecord[King] <= 0)
-                printf("CONGRATULATION, BLACK WINS\n");
-            if (blackRecord[King] <= 0)
-                printf("CONGRATULATION, WHITE WINS\n");
-            printf("Do you want to play again? (Press 'y' to play again or 'enter' to continue...)\n");
-            while ((getchar()) != '\n') // clear the input buffer
-                ; // null statement
-            char result = getchar();
-            if (result == 'y' || result == 'Y')
-            {
-                init(board, whiteRecord, blackRecord, &isWhiteTurns);
-                continue;
-            }
-            else
-                break;
-        }
-
-        InputProps input = getUserInput(isWhiteTurns);
-
-        // check if the player wants to quit or restart the game;
-        if (input.quit)
-        {
-            printf("Are you sure you want to quit the game? (Press 'y' to quit or 'enter' to cancel...)\n");
-            while ((getchar()) != '\n')
-                ; // null statement
-            char result = getchar();
-            if (result == 'y' || result == 'Y')
-                break;
-        }
-        else if (input.restart)
-        {
-            printf("Are you sure you want to restart the game? (Press 'y' to restart or 'enter' to cancel...)\n");
-            while ((getchar()) != '\n') // clear the input buffer
-                ; // null statement
-            char result = getchar();
-            if (result == 'y' || result == 'Y')
-                init(board, whiteRecord, blackRecord, &isWhiteTurns);
-        }
-        else if (input.save)
-        {
-            saveGame(board, whiteRecord, blackRecord, isWhiteTurns);
-        }
-        else if (input.load)
-        {
-            const char *saveFiles[MAX_SAVE_FILES] = { NULL };
-            if (getSaveFiles(saveFiles)) {
-                char fileName[INPUT_BUFFER_SIZE] = { "" };
-                if (saveFilesMenu(saveFiles, fileName))
-                    loadGame(fileName, board, whiteRecord, blackRecord, &isWhiteTurns);
-            }
-            else {
-                printf("ERROR: Cannot open 'save' directory!\n");
-                while ((getchar()) != '\n') // clear the input buffer
-                    ; // null statement
-                getchar(); // press any key to continue
-            }
-        }
-        else if (!input.invalid && move(input, board, isWhiteTurns, whiteRecord, blackRecord))
-        {
-            isWhiteTurns = !isWhiteTurns;
+            process_win(board, whiteRecord, blackRecord, &isWhiteTurns, &finish);
         }
         else
         {
-            printf("Invalid Input! Please try again. Press 'enter' to continue...\n");
-            while ((getchar()) != '\n') // clear the input buffer
-                ; // null statement
-            getchar(); // press any key to continue
+            InputProps input = getUserInput(isWhiteTurns);
+
+            // check if the player wants to quit or restart the game;
+            if (input.quit)
+            {
+                process_quit(&finish);
+            }
+            else if (input.restart)
+            {
+                process_restart(board, whiteRecord, blackRecord, &isWhiteTurns);
+            }
+            else if (input.save)
+            {
+                saveGame(board, whiteRecord, blackRecord, isWhiteTurns);
+            }
+            else if (input.load)
+            {
+                process_load(board, whiteRecord, blackRecord, &isWhiteTurns);
+            }
+            else if (!input.invalid && move(input, board, isWhiteTurns, whiteRecord, blackRecord))
+            {
+                isWhiteTurns = !isWhiteTurns;
+            }
+            else
+            {
+                prompt_invalid();
+            }
         }
     }
 
