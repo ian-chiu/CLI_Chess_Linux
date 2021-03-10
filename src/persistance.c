@@ -26,7 +26,7 @@ bool getSaveFiles(const char **saveFiles)
     return true;
 }
 
-void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord, bool isWhiteTurns)
+void saveGame(const GameProps *game)
 {
     char name[256];
     printf("Please input the name of the save file: ");
@@ -39,19 +39,19 @@ void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord
     {
         fprintf(fp, "------------------------SNAPSHOT-----------------------\n");
         fprintf(fp, "Black left: ♙ x%d ♘ x%d ♗ x%d ♖ x%d ♕ x%d ♔ x%d\n",
-           blackRecord[Pawn],
-           blackRecord[Knight],
-           blackRecord[Bishop],
-           blackRecord[Rook],
-           blackRecord[Queen],
-           blackRecord[King]);
+            game->blackRecord[Pawn],
+            game->blackRecord[Knight],
+            game->blackRecord[Bishop],
+            game->blackRecord[Rook],
+            game->blackRecord[Queen],
+            game->blackRecord[King]);
         fprintf(fp, "White left: ♟︎ x%d ♞ x%d ♝ x%d ♜ x%d ♛ x%d ♚ x%d\n",
-            whiteRecord[Pawn],
-            whiteRecord[Knight],
-            whiteRecord[Bishop],
-            whiteRecord[Rook],
-            whiteRecord[Queen],
-            whiteRecord[King]);
+            game->whiteRecord[Pawn],
+            game->whiteRecord[Knight],
+            game->whiteRecord[Bishop],
+            game->whiteRecord[Rook],
+            game->whiteRecord[Queen],
+            game->whiteRecord[King]);
         fprintf(fp, "\t  _________________________\n");
         for (int y = 0; y < BOARD_SIZE; y++)
         {
@@ -59,25 +59,25 @@ void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord
             for (int x = 0; x < BOARD_SIZE; x++)
             {
                 int index = y * BOARD_SIZE + x;
-                switch (board[index].type)
+                switch (game->board[index].type)
                 {
                 case Pawn:
-                    board[index].isWhite ? fprintf(fp, "♟︎ ") : fprintf(fp, "♙ ");
+                    game->board[index].isWhite ? fprintf(fp, "♟︎ ") : fprintf(fp, "♙ ");
                     break;
                 case Knight:
-                    board[index].isWhite ? fprintf(fp, "♞ ") : fprintf(fp, "♘ ");
+                    game->board[index].isWhite ? fprintf(fp, "♞ ") : fprintf(fp, "♘ ");
                     break;
                 case Bishop:
-                    board[index].isWhite ? fprintf(fp, "♝ ") : fprintf(fp, "♗ ");
+                    game->board[index].isWhite ? fprintf(fp, "♝ ") : fprintf(fp, "♗ ");
                     break;
                 case Rook:
-                    board[index].isWhite ? fprintf(fp, "♜ ") : fprintf(fp, "♖ ");
+                    game->board[index].isWhite ? fprintf(fp, "♜ ") : fprintf(fp, "♖ ");
                     break;
                 case Queen:
-                    board[index].isWhite ? fprintf(fp, "♛ ") : fprintf(fp, "♕ ");
+                    game->board[index].isWhite ? fprintf(fp, "♛ ") : fprintf(fp, "♕ ");
                     break;
                 case King:
-                    board[index].isWhite ? fprintf(fp, "♚ ") : fprintf(fp, "♔ ");
+                    game->board[index].isWhite ? fprintf(fp, "♚ ") : fprintf(fp, "♔ ");
                     break;
                 default:
                     if (y % 2)
@@ -94,20 +94,20 @@ void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord
         
         fprintf(fp, "--------------------------DATA-------------------------\n");
         fprintf(fp, "#ISWHITETURNS\n");
-        fprintf(fp, "%d\n", isWhiteTurns);
+        fprintf(fp, "%d\n", game->isWhiteTurns);
 
         fprintf(fp, "\n#WHITERECORD\n");
         for (int i = 0; i < NumberOfChessType; i++) 
-            fprintf(fp, "%d\n", whiteRecord[i]);
+            fprintf(fp, "%d\n", game->whiteRecord[i]);
 
         fprintf(fp, "\n#BLACKRECORD\n");
         for (int i = 0; i < NumberOfChessType; i++) 
-            fprintf(fp, "%d\n", blackRecord[i]);
+            fprintf(fp, "%d\n", game->blackRecord[i]);
 
         fprintf(fp, "\n#BOARD\n");
         // fprintf(fp, "type\tisWhite\n");
         for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) 
-            fprintf(fp, "%d\t%d\n", board[i].type, board[i].isWhite);
+            fprintf(fp, "%d\t%d\n", game->board[i].type, game->board[i].isWhite);
 
         fclose(fp);
     }
@@ -117,12 +117,12 @@ void saveGame(const Piece *board, const int *whiteRecord, const int *blackRecord
     }
 }
 
-void loadGame(const char *fileName, Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
+void loadGame(const char *filename, GameProps *game)
 {
     FILE *fp = NULL;
     char filepath[INPUT_BUFFER_SIZE] = { "" };
     strcat(filepath, SAVE_FOLDER_PATH);
-    strcat(filepath, fileName);
+    strcat(filepath, filename);
     if ((fp = fopen(filepath, "r")) != NULL) 
     {
         char * line = NULL;
@@ -135,8 +135,8 @@ void loadGame(const char *fileName, Piece *board, int *whiteRecord, int *blackRe
         }
         for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) 
         {
-            fscanf(fp, "%d", &board[i].type);
-            fscanf(fp, "%d", &board[i].isWhite);
+            fscanf(fp, "%d", &game->board[i].type);
+            fscanf(fp, "%d", &game->board[i].isWhite);
         }
 
         rewind(fp);
@@ -145,7 +145,7 @@ void loadGame(const char *fileName, Piece *board, int *whiteRecord, int *blackRe
             // printf("Retrieved line of length %zu:\n", read);
             // printf("%s", line);
         }
-        fscanf(fp, "%d", isWhiteTurns);
+        fscanf(fp, "%d", &game->isWhiteTurns);
 
         rewind(fp);
         while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#WHITERECORD\n") != 0) 
@@ -154,7 +154,7 @@ void loadGame(const char *fileName, Piece *board, int *whiteRecord, int *blackRe
             // printf("%s", line);
         }
         for (int i = 0; i < NumberOfChessType; i++) 
-            fscanf(fp, "%d", &whiteRecord[i]);
+            fscanf(fp, "%d", &game->whiteRecord[i]);
 
         rewind(fp);
         while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#BLACKRECORD\n") != 0) 
@@ -163,7 +163,7 @@ void loadGame(const char *fileName, Piece *board, int *whiteRecord, int *blackRe
             // printf("%s", line);
         }
         for (int i = 0; i < NumberOfChessType; i++) 
-            fscanf(fp, "%d", &whiteRecord[i]);
+            fscanf(fp, "%d", &game->blackRecord[i]);
 
         fclose(fp);
     }

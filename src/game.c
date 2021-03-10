@@ -32,7 +32,7 @@ InputProps getUserInput(bool isWhiteTurns)
     isWhiteTurns ? printf("White turns: ") : printf("Black turns: ");
 
     // ---------------input 1------------------
-    char input1[20];
+    char input1[INPUT_BUFFER_SIZE];
     scanf("%s", input1);
 
     // check if input1 is 'quit'
@@ -117,25 +117,28 @@ InputProps getUserInput(bool isWhiteTurns)
     return result;
 }
 
-void init(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
+void init(GameProps *game)
 {
-    *isWhiteTurns = true;
+    game->finish = false;
+    game->isWhiteTurns = true;
 
-    whiteRecord[None] = 0;
-    whiteRecord[Pawn] = 8;
-    whiteRecord[Knight] = 2;
-    whiteRecord[Bishop] = 2;
-    whiteRecord[Rook] = 2;
-    whiteRecord[Queen] = 1;
-    whiteRecord[King] = 1;
+    game->whiteRecord[None] = 0;
+    game->whiteRecord[Pawn] = 8;
+    game->whiteRecord[Knight] = 2;
+    game->whiteRecord[Bishop] = 2;
+    game->whiteRecord[Rook] = 2;
+    game->whiteRecord[Queen] = 1;
+    game->whiteRecord[King] = 1;
 
-    blackRecord[None] = 0;
-    blackRecord[Pawn] = 8;
-    blackRecord[Knight] = 2;
-    blackRecord[Bishop] = 2;
-    blackRecord[Rook] = 2;
-    blackRecord[Queen] = 1;
-    blackRecord[King] = 1;
+    game->blackRecord[None] = 0;
+    game->blackRecord[Pawn] = 8;
+    game->blackRecord[Knight] = 2;
+    game->blackRecord[Bishop] = 2;
+    game->blackRecord[Rook] = 2;
+    game->blackRecord[Queen] = 1;
+    game->blackRecord[King] = 1;
+
+    Piece *board = game->board;
 
     for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)
     {
@@ -220,35 +223,45 @@ void init(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
     board[posStrToIndex("e8")].type = King;
 }
 
-bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, int *blackRecord)
+bool move(const InputProps *input, GameProps *game)
 {
-    if (input.castle)
+    if (input->castle)
     {
         printf("ERROR: Have not supported castle yet!\n");
         return false;
     }
 
+    Piece *board = game->board;
+    int *whiteRecord = game->whiteRecord;
+    int *blackRecord = game->blackRecord;
+    bool isWhiteTurns = game->isWhiteTurns;
+
     bool success = false;
 
     char from[3];
-    strcpy(from, input.from);
+    strcpy(from, input->from);
     int fromIndex = posStrToIndex(from);
     Position fromPos = posStrToPos(from);
 
     if (board[fromIndex].type == None)
     {
         printf("ERROR: There is no any piece on %s!\n", from);
+        prompt_invalid();
         return false;
     }
     else if (board[fromIndex].isWhite != isWhiteTurns)
     {
         printf("ERROR: Cannot move your component's piece!\n");
+        prompt_invalid();
         return false;
     }
-    else if (input.promote) // check if user promote a pawn
+    else if (input->promote) // check if user promote a pawn
     {
-        if (board[fromIndex].type != Pawn)
+        if (board[fromIndex].type != Pawn) 
+        {
             printf("ERROR: Cannot promote the piece which is not a Pawn!");
+            prompt_invalid();
+        }
         else
         {
             if (isWhiteTurns && from[1] == '8')
@@ -268,13 +281,14 @@ bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, i
             else
             {
                 printf("ERROR: Cannot promote the Pawn at position %s", from);
+                prompt_invalid();
             }
             return success;
         }
     }
 
     char to[3];
-    strcpy(to, input.to);
+    strcpy(to, input->to);
     int toIndex = posStrToIndex(to);
     Position toPos = posStrToPos(to);
 
@@ -479,7 +493,7 @@ bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, i
             }
             default:
             {
-                printf("ERROR: No such type of chess piece.");
+                printf("ERROR: No such type of chess piece.\n");
             }
         }
         
@@ -496,54 +510,59 @@ bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, i
         }
         board[toIndex] = board[fromIndex];
         board[fromIndex].type = None;
+        game->isWhiteTurns = !game->isWhiteTurns;
+    }
+    else
+    {
+        prompt_invalid();
     }
 
     return success;
 }
 
-void render(const Piece *board, int *whiteRecord, int *blackRecord, bool isWhiteTurns)
+void render(const GameProps *game)
 {
     system("clear");
     printf("Black left: ♙ x%d ♘ x%d ♗ x%d ♖ x%d ♕ x%d ♔ x%d\n",
-           blackRecord[Pawn],
-           blackRecord[Knight],
-           blackRecord[Bishop],
-           blackRecord[Rook],
-           blackRecord[Queen],
-           blackRecord[King]);
+           game->blackRecord[Pawn],
+           game->blackRecord[Knight],
+           game->blackRecord[Bishop],
+           game->blackRecord[Rook],
+           game->blackRecord[Queen],
+           game->blackRecord[King]);
     printf("White left: ♟︎ x%d ♞ x%d ♝ x%d ♜ x%d ♛ x%d ♚ x%d\n",
-           whiteRecord[Pawn],
-           whiteRecord[Knight],
-           whiteRecord[Bishop],
-           whiteRecord[Rook],
-           whiteRecord[Queen],
-           whiteRecord[King]);
+           game->whiteRecord[Pawn],
+           game->whiteRecord[Knight],
+           game->whiteRecord[Bishop],
+           game->whiteRecord[Rook],
+           game->whiteRecord[Queen],
+           game->whiteRecord[King]);
     printf("\t  _________________________\n");
     for (int y = 0; y < BOARD_SIZE; y++)
     {
-        isWhiteTurns ? printf("\t%d |", (9 - (y + 1))) : printf("\t%d |", y + 1);
+        game->isWhiteTurns ? printf("\t%d |", (9 - (y + 1))) : printf("\t%d |", y + 1);
         for (int x = 0; x < BOARD_SIZE; x++)
         {
-            int index = isWhiteTurns ? y * BOARD_SIZE + x : (7 - y) * BOARD_SIZE + (7 - x);
-            switch (board[index].type)
+            int index = game->isWhiteTurns ? y * BOARD_SIZE + x : (7 - y) * BOARD_SIZE + (7 - x);
+            switch (game->board[index].type)
             {
             case Pawn:
-                board[index].isWhite ? printf("♟︎ ") : printf("♙ ");
+                game->board[index].isWhite ? printf("♟︎ ") : printf("♙ ");
                 break;
             case Knight:
-                board[index].isWhite ? printf("♞ ") : printf("♘ ");
+                game->board[index].isWhite ? printf("♞ ") : printf("♘ ");
                 break;
             case Bishop:
-                board[index].isWhite ? printf("♝ ") : printf("♗ ");
+                game->board[index].isWhite ? printf("♝ ") : printf("♗ ");
                 break;
             case Rook:
-                board[index].isWhite ? printf("♜ ") : printf("♖ ");
+                game->board[index].isWhite ? printf("♜ ") : printf("♖ ");
                 break;
             case Queen:
-                board[index].isWhite ? printf("♛ ") : printf("♕ ");
+                game->board[index].isWhite ? printf("♛ ") : printf("♕ ");
                 break;
             case King:
-                board[index].isWhite ? printf("♚ ") : printf("♔ ");
+                game->board[index].isWhite ? printf("♚ ") : printf("♔ ");
                 break;
             default:
                 if (y % 2)
@@ -556,7 +575,7 @@ void render(const Piece *board, int *whiteRecord, int *blackRecord, bool isWhite
         }
         printf("\n");
     }
-    isWhiteTurns ? printf("\t   a  b  c  d  e  f  g  h\n\n") : printf("\t   h  g  f  e  d  c  b  a\n\n");
+    game->isWhiteTurns ? printf("\t   a  b  c  d  e  f  g  h\n\n") : printf("\t   h  g  f  e  d  c  b  a\n\n");
 }
 
 bool saveFilesMenu(const char **saveFiles, char *filename)
@@ -573,7 +592,7 @@ bool saveFilesMenu(const char **saveFiles, char *filename)
     
     printf("Please input the number of the file: ");
     unsigned int num = 0;
-    if (scanf("%u", &num) && num < nFiles) 
+    if (scanf("%u", &num) && num <= nFiles) 
     {
         strcpy(filename, saveFiles[num - 1]);
         return true;
@@ -646,23 +665,23 @@ void process_quit(bool *finish)
         *finish = true;
 }
 
-void process_restart(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
+void process_restart(GameProps *game)
 {
     printf("Are you sure you want to restart the game? (Press 'y' to restart or 'enter' to cancel...)\n");
     while ((getchar()) != '\n') // clear the input buffer
         ; // null statement
     char result = getchar();
     if (result == 'y' || result == 'Y')
-        init(board, whiteRecord, blackRecord, isWhiteTurns);
+        init(game);
 }
 
-void process_load(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns)
+void process_load(GameProps *game)
 {
     const char *saveFiles[MAX_SAVE_FILES] = { NULL };
     if (getSaveFiles(saveFiles)) {
         char fileName[INPUT_BUFFER_SIZE] = { "" };
         if (saveFilesMenu(saveFiles, fileName))
-            loadGame(fileName, board, whiteRecord, blackRecord, isWhiteTurns);
+            loadGame(fileName, game);
     }
     else {
         printf("ERROR: Cannot open 'save' directory!\n");
@@ -674,30 +693,29 @@ void process_load(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhit
 
 void prompt_invalid()
 {
-    prompt_invalid();
     printf("Invalid Input! Please try again. Press 'enter' to continue...\n");
     while ((getchar()) != '\n') // clear the input buffer
         ; // null statement
     getchar(); // press any key to continue
 }
 
-bool hasWinner(int *whiteRecord, int *blackRecord)
+bool hasWinner(const GameProps *game)
 {
-    return whiteRecord[King] <= 0 || blackRecord[King] <= 0;
+    return game->whiteRecord[King] <= 0 || game->blackRecord[King] <= 0;
 }
 
-void process_win(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns, bool *finish)
+void process_win(GameProps *game)
 {
-    if (whiteRecord[King] <= 0)
+    if (game->whiteRecord[King] <= 0)
         printf("CONGRATULATION, BLACK WINS\n");
-    if (blackRecord[King] <= 0)
+    if (game->blackRecord[King] <= 0)
         printf("CONGRATULATION, WHITE WINS\n");
     printf("Do you want to play again? (Press 'y' to play again or 'enter' to continue...)\n");
     while ((getchar()) != '\n') // clear the input buffer
         ; // null statement
     char result = getchar();
     if (result == 'y' || result == 'Y')
-        init(board, whiteRecord, blackRecord, isWhiteTurns);
+        init(game);
     else 
-        *finish = true;
+        game->finish = true;
 }

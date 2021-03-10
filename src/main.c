@@ -8,48 +8,42 @@
 
 int main()
 {
-    Piece board[BOARD_SIZE * BOARD_SIZE];
-    int whiteRecord[NumberOfChessType];
-    int blackRecord[NumberOfChessType];
-    bool isWhiteTurns;
-    bool finish = false;
+    GameProps game;
 
-    init(board, whiteRecord, blackRecord, &isWhiteTurns);
+    init(&game);
     startMenu();
 
-    while (!finish)
+    while (!game.finish)
     {
-        render(board, whiteRecord, blackRecord, isWhiteTurns);
+        render(&game);
 
-        // check if a winner appears
-        if (hasWinner(whiteRecord, blackRecord))
+        if (hasWinner(&game))
         {
-            process_win(board, whiteRecord, blackRecord, &isWhiteTurns, &finish);
+            process_win(&game);
         }
         else
         {
-            InputProps input = getUserInput(isWhiteTurns);
+            InputProps input = getUserInput(game.isWhiteTurns);
 
-            // check if the player wants to quit or restart the game;
             if (input.quit)
             {
-                process_quit(&finish);
+                process_quit(&game.finish);
             }
             else if (input.restart)
             {
-                process_restart(board, whiteRecord, blackRecord, &isWhiteTurns);
+                process_restart(&game);
             }
             else if (input.save)
             {
-                saveGame(board, whiteRecord, blackRecord, isWhiteTurns);
+                saveGame(&game);
             }
             else if (input.load)
             {
-                process_load(board, whiteRecord, blackRecord, &isWhiteTurns);
+                process_load(&game);
             }
-            else if (!input.invalid && move(input, board, isWhiteTurns, whiteRecord, blackRecord))
+            else if (!input.invalid)
             {
-                isWhiteTurns = !isWhiteTurns;
+                move(&input, &game);
             }
             else
             {

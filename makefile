@@ -13,7 +13,7 @@ SRCS = $(shell find $(SRC_DIR) -name *.c)
 # Use math library
 LIBS = -lm
 
-# Predefine a "CWD" macro so that we can get the makefile directory inside the program (in persistance.h)
+# Predefine a "CWD" (current working directory) macro so that we can get the makefile directory inside the program (in persistance.h)
 PREDEFINED_MACROS = -DCWD='"$(shell pwd)"'
 
 # String substitution for every C file.

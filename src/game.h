@@ -29,6 +29,16 @@ typedef struct
     int y;
 } Position;
 
+typedef struct 
+{
+    Piece board[BOARD_SIZE * BOARD_SIZE];
+    int whiteRecord[NumberOfChessType];
+    int blackRecord[NumberOfChessType];
+    bool isWhiteTurns;
+    bool finish;
+} GameProps;
+
+
 typedef struct
 {
     char from[3];
@@ -44,17 +54,17 @@ typedef struct
 
 InputProps getUserInput(bool isWhiteTurns);
 
-void init(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns);
-bool move(InputProps input, Piece *board, bool isWhiteTurns, int *whiteRecord, int *blackRecord);
+void init(GameProps *game);
+bool move(const InputProps *input, GameProps *game);
 
-void render(const Piece *board, int *whiteRecord, int *blackRecord, bool isWhiteTurns);
+void render(const GameProps *game);
 void startMenu();
 bool saveFilesMenu(const char **saveFiles, char *filename);
 void goodbye();
 
 void process_quit(bool *finish);
-void process_restart(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns);
-void process_load(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns);
+void process_restart(GameProps *game);
+void process_load(GameProps *game);
 void prompt_invalid();
-bool hasWinner(int *whiteRecord, int *blackRecord);
-void process_win(Piece *board, int *whiteRecord, int *blackRecord, bool *isWhiteTurns, bool *finish);
+bool hasWinner(const GameProps *game);
+void process_win(GameProps *game);
