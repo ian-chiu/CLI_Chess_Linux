@@ -4,7 +4,7 @@
 // TODO: prev move message
 #include <stdio.h>
 #include "game.h"
-#include "persistance.h"
+#include "fileManagement.h"
 
 int main()
 {
@@ -40,6 +40,10 @@ int main()
             else if (input.load)
             {
                 process_load(&game);
+            }
+            else if (input.help)
+            {
+                help();
             }
             else if (!input.invalid)
             {

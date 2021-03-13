@@ -1,9 +1,9 @@
 #pragma once
 
 #include <stdbool.h>
+#include "input.h"
 
 #define BOARD_SIZE 8
-#define INPUT_BUFFER_SIZE 256
 
 enum ChessType
 {
@@ -38,21 +38,8 @@ typedef struct
     bool finish;
 } GameProps;
 
-
-typedef struct
-{
-    char from[3];
-    char to[3];
-    bool invalid;
-    bool quit;
-    bool restart;
-    bool promote;
-    bool castle;
-    bool save;
-    bool load;
-} InputProps;
-
-InputProps getUserInput(bool isWhiteTurns);
+int posStrToIndex(const char *pos);
+Position posStrToPos(const char *posStr);
 
 void init(GameProps *game);
 bool move(const InputProps *input, GameProps *game);
@@ -61,6 +48,7 @@ void render(const GameProps *game);
 void startMenu();
 bool saveFilesMenu(const char **saveFiles, char *filename);
 void goodbye();
+void help();
 
 void process_quit(bool *finish);
 void process_restart(GameProps *game);

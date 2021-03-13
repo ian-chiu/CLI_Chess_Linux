@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <stdlib.h>
-#include "persistance.h"
+#include "fileManagement.h"
 #include "game.h"
 
 bool getSaveFiles(const char **saveFiles)
@@ -29,10 +29,13 @@ bool getSaveFiles(const char **saveFiles)
 void saveGame(const GameProps *game)
 {
     char name[256];
-    printf("Please input the name of the save file: ");
+    printf("Please input the name of the save file (or input 'cancel' to cancel): ");
     scanf("%s", name);
+    if (strcmp(name, "cancel") == 0) 
+        return;
+
     FILE *fp = NULL;
-    char filepath[INPUT_BUFFER_SIZE] = { "" };
+    char filepath[BUFFER_SIZE] = { "" };
     strcat(filepath, SAVE_FOLDER_PATH);
     strcat(filepath, name);
     if ((fp = fopen(filepath, "w")) != NULL) 
@@ -120,7 +123,7 @@ void saveGame(const GameProps *game)
 void loadGame(const char *filename, GameProps *game)
 {
     FILE *fp = NULL;
-    char filepath[INPUT_BUFFER_SIZE] = { "" };
+    char filepath[BUFFER_SIZE] = { "" };
     strcat(filepath, SAVE_FOLDER_PATH);
     strcat(filepath, filename);
     if ((fp = fopen(filepath, "r")) != NULL) 
@@ -135,8 +138,12 @@ void loadGame(const char *filename, GameProps *game)
         }
         for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) 
         {
-            fscanf(fp, "%d", &game->board[i].type);
-            fscanf(fp, "%d", &game->board[i].isWhite);
+            int int_type = 0;
+            int int_isWhite = 0;
+            fscanf(fp, "%d", &int_type);
+            fscanf(fp, "%d", &int_isWhite);
+            game->board[i].type = (enum ChessType)int_type;
+            game->board[i].isWhite = (bool)int_isWhite;
         }
 
         rewind(fp);
@@ -145,7 +152,9 @@ void loadGame(const char *filename, GameProps *game)
             // printf("Retrieved line of length %zu:\n", read);
             // printf("%s", line);
         }
-        fscanf(fp, "%d", &game->isWhiteTurns);
+        int int_isWhiteTurns = 0;
+        fscanf(fp, "%d", &int_isWhiteTurns);
+        game->isWhiteTurns = (bool)int_isWhiteTurns;
 
         rewind(fp);
         while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#WHITERECORD\n") != 0) 

@@ -1,120 +1,53 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <regex.h>
-#include <assert.h>
 #include <math.h>
 #include "game.h"
-#include "persistance.h"
+#include "fileManagement.h"
 
-static int posStrToIndex(const char *pos)
+#define CLEAR_INPUT_BUFFER() \
+    int c; \
+    while (!feof(stdin) && (c = getchar()) != '\n' && c != EOF) { }
+
+static void pressEnterToContinue() 
+{
+    printf("Press enter to continue...\n");
+    CLEAR_INPUT_BUFFER();
+    char enter = 0;
+    while (enter != '\r' && enter != '\n') { enter = getchar(); }
+}
+
+static void printAcceptableInputs()
+{
+    printf("------------------------------------------------------------------------------\n");
+    printf("ACCEPTABLE INPUTS\n\n");
+    printf("<pos1> <pos2>\n");
+    printf("\tmove a piece from <pos1> to <pos2>.\n\n");
+    printf("<pos1> promote\n");
+    printf("\tpromote a pawn to queen at <pos1>.\n\n");
+    printf("save\n");
+    printf("\tsave the game to a file.\n\n");
+    printf("load\n");
+    printf("\tload the game from a save file.\n\n");
+    printf("quit\n");
+    printf("\tquit the game.\n\n");
+    printf("restart\n");
+    printf("\trestart the game.\n\n");
+    printf("help\n");
+    printf("\tsee all acceptable inputs.\n\n");
+    printf("The game does not support 'castle the king' and 'en passant'.\n");
+    printf("------------------------------------------------------------------------------\n");
+}
+
+int posStrToIndex(const char *pos)
 {
     return abs(pos[1] - 48 - 8) * BOARD_SIZE + (pos[0] - 97);
 }
 
-static Position posStrToPos(const char *posStr)
+Position posStrToPos(const char *posStr)
 {
     Position pos = {posStr[0] - 97, abs(posStr[1] - 48 - 8)};
     return pos;
-}
-
-InputProps getUserInput(bool isWhiteTurns)
-{
-    InputProps result;
-    result.quit = false;
-    result.restart = false;
-    result.invalid = false;
-    result.promote = false;
-    result.castle = false;
-    result.save = false;
-    result.load = false;
-
-    isWhiteTurns ? printf("White turns: ") : printf("Black turns: ");
-
-    // ---------------input 1------------------
-    char input1[INPUT_BUFFER_SIZE];
-    scanf("%s", input1);
-
-    // check if input1 is 'quit'
-    if (strcmp(input1, "quit") == 0)
-    {
-        result.quit = true;
-        return result;
-    }
-
-    // check if input1 is 'restart'
-    if (strcmp(input1, "restart") == 0)
-    {
-        result.restart = true;
-        return result;
-    }
-
-    // check if input1 is 'save'
-    if (strcmp(input1, "save") == 0)
-    {
-        result.save = true;
-        return result;
-    }
-
-    // check if input1 is 'load'
-    if (strcmp(input1, "load") == 0)
-    {
-        result.load = true;
-        return result;
-    }
-
-    regex_t regex;
-    assert(regcomp(&regex, "^[a-zA-Z][1-9]$", REG_ICASE | REG_EXTENDED) == 0);
-
-    // check if input 1 meets the regex "^[a-zA-Z][1-9]$"
-    int status1 = regexec(&regex, input1, 0, NULL, 0);
-    if (status1 != 0)
-    {
-        result.invalid = true;
-        return result;
-    }
-
-    // store first input position to result
-    result.from[0] = input1[0];
-    result.from[1] = input1[1];
-    result.from[2] = '\0';
-
-    // ---------------input 2------------------
-    char input2[20];
-    scanf("%s", input2);
-
-    // check if input2 is 'promote'
-    if (strcmp(input2, "promote") == 0)
-    {
-        result.promote = true;
-        return result;
-    }
-
-    // check if input2 is 'castle'
-    if (strcmp(input2, "castle") == 0)
-    {
-        result.castle = true;
-        return result;
-    }
-
-    int status2 = regexec(&regex, input2, 0, NULL, 0);
-    result.invalid = status1 != 0 || status2 != 0;
-    if (!result.invalid)
-    {
-        result.to[0] = input2[0];
-        result.to[1] = input2[1];
-        result.to[2] = '\0';
-
-        if (
-            (posStrToIndex(result.from) >= BOARD_SIZE * BOARD_SIZE || posStrToIndex(result.from) < 0) ||
-            (posStrToIndex(result.to) >= BOARD_SIZE * BOARD_SIZE || posStrToIndex(result.to) < 0))
-        {
-            result.invalid = true;
-            printf("ERROR: Input out of range!\n");
-        }
-    }
-    regfree(&regex);
-    return result;
 }
 
 void init(GameProps *game)
@@ -326,30 +259,30 @@ bool move(const InputProps *input, GameProps *game)
                                 success = true;
                         }
                     }
-                    // en passant
-                    int enemyIndex = fromPos.y * BOARD_SIZE + toPos.x;
-                    bool hasEnemy = board[enemyIndex].type != None;
-                    if (hasEnemy && abs(fromPos.x - toPos.x) == 1)
-                    {
-                        if (isWhiteTurns)
-                        {
-                            if (from[1] == '5' && toPos.y == fromPos.y - 1)
-                            {
-                                success = true;
-                                blackRecord[board[enemyIndex].type] -= 1;
-                                board[enemyIndex].type = None;
-                            }
-                        }
-                        else
-                        {
-                            if (from[1] == '4' && toPos.y == fromPos.y + 1)
-                            {
-                                success = true;
-                                whiteRecord[board[enemyIndex].type] -= 1;
-                                board[enemyIndex].type = None;
-                            }
-                        }
-                    }
+                    // --------------------TODO: en passant--------------------
+                    // int enemyIndex = fromPos.y * BOARD_SIZE + toPos.x;
+                    // bool hasEnemy = board[enemyIndex].type != None;
+                    // if (hasEnemy && abs(fromPos.x - toPos.x) == 1)
+                    // {
+                    //     if (isWhiteTurns)
+                    //     {
+                    //         if (from[1] == '5' && toPos.y == fromPos.y - 1)
+                    //         {
+                    //             success = true;
+                    //             blackRecord[board[enemyIndex].type] -= 1;
+                    //             board[enemyIndex].type = None;
+                    //         }
+                    //     }
+                    //     else
+                    //     {
+                    //         if (from[1] == '4' && toPos.y == fromPos.y + 1)
+                    //         {
+                    //             success = true;
+                    //             whiteRecord[board[enemyIndex].type] -= 1;
+                    //             board[enemyIndex].type = None;
+                    //         }
+                    //     }
+                    // }
                 }
                 else // Attack enemy
                 {
@@ -603,36 +536,37 @@ bool saveFilesMenu(const char **saveFiles, char *filename)
     }
 }
 
+void help()
+{
+    system("clear");
+    printAcceptableInputs();
+    pressEnterToContinue();
+}
+
 void startMenu()
 {
     system("clear");
     printf("--------------------------------WELCOME TO CHESS-------------------------------\n");
     printf("CHESS IS A TWO PLAYER BOARD GAME\n");
     printf("Author: 107802516 電機3B 邱士懿\n");
-    printf("\t                                                     _:_        \n");
-    printf("\t                                                    '-.-'       \n");
-    printf("\t                                           ()      __.'.__      \n");
-    printf("\t                                        .-:--:-.  |_______|     \n");
-    printf("\t                                 ()      \\____/    \\=====/      \n");
-    printf("\t                                 /\\      {====}     )___(       \n");
-    printf("\t                      (\\=,      //\\\\      )__(     /_____\\   \n");
-    printf("\t      __    |'-'-'|  //  .\\    (    )    /____\\     |   |       \n");
-    printf("\t     /  \\   |_____| (( \\_  \\    )__(      |  |      |   |       \n");
-    printf("\t     \\__/    |===|   ))  `\\_)  /____\\     |  |      |   |       \n");
-    printf("\t    /____\\   |   |  (/     \\    |  |      |  |      |   |       \n");
-    printf("\t     |  |    |   |   | _.-'|    |  |      |  |      |   |       \n");
-    printf("\t     |__|    )___(    )___(    /____\\    /____\\    /_____\\     \n");
-    printf("\t    (====)  (=====)  (=====)  (======)  (======)  (=======)     \n");
-    printf("\t    }===={  }====={  }====={  }======{  }======{  }======={     \n");
-    printf("\tjgs(______)(_______)(_______)(________)(________)(_________)    \n\n");
-    printf("---------------------------------OPERATIONS------------------------------------\n");
-    printf("1.\tInput 'quit' to quit the game and 'restart' to restart the game.\n\n");
-    printf("2.\tPlease input the position of a piece you want to move and the position\n"
-           "\twhere you want to move it to.(<from> <to>).\n\n");
-    printf("p.s.\tFor Example, for a white pawn at the initial position a2, if we input\n"
-           "\t'a2 a4', then we move the pawn from a2 to a4.\n");
-    printf("------------------------------------------------------------------------------\n");
-    printf("Press 'enter' to start...");
+    printf("\t                                                  _:_                     \n");
+    printf("\t                                                 '-.-'                    \n");
+    printf("\t                                        ()      __.'.__                   \n");
+    printf("\t                                     .-:--:-.  |_______|                  \n");
+    printf("\t                              ()      \\____/    \\=====/                 \n");
+    printf("\t                              /\\      {====}     )___(                   \n");
+    printf("\t                   (\\=,      //\\\\      )__(     /_____\\               \n");
+    printf("\t   __    |'-'-'|  //  .\\    (    )    /____\\     |   |                  \n");
+    printf("\t  /  \\   |_____| (( \\_  \\    )__(      |  |      |   |                 \n");
+    printf("\t  \\__/    |===|   ))  `\\_)  /____\\     |  |      |   |                 \n");
+    printf("\t /____\\   |   |  (/     \\    |  |      |  |      |   |                  \n");
+    printf("\t  |  |    |   |   | _.-'|    |  |      |  |      |   |                    \n");
+    printf("\t  |__|    )___(    )___(    /____\\    /____\\    /_____\\                \n");
+    printf("\t (====)  (=====)  (=====)  (======)  (======)  (=======)                  \n");
+    printf("\t }===={  }====={  }====={  }======{  }======{  }======={                  \n");
+    printf("\t(______)(_______)(_______)(________)(________)(_________)create by jgs    \n\n");
+    printAcceptableInputs();
+    printf("Press enter to continue...\n");
     getchar();
 }
 
@@ -648,18 +582,16 @@ void goodbye()
     printf("\t \\__, |\\___/ \\___/ \\__,_|_.__/ \\__, |\\___|    \n");
     printf("\t  __/ |                         __/ |               \n");
     printf("\t |___/                         |___/                \n\n");
-    printf("Press 'enter' to continue...\n");
-    while ((getchar()) != '\n') // clear the input buffer
-        ;                       // null statement
-    getchar();
+    pressEnterToContinue();
     system("clear");
 }
 
 void process_quit(bool *finish)
 {
-    printf("Are you sure you want to quit the game? (Press 'y' to quit or 'enter' to cancel...)\n");
-    while ((getchar()) != '\n')
-        ; // null statement
+    printf("--------------------------------------------------------\n");
+    printf("Are you sure you want to quit the game?\n");
+    printf("(Input 'y' to restart or press 'enter' to cancel...)\n");
+    CLEAR_INPUT_BUFFER();
     char result = getchar();
     if (result == 'y' || result == 'Y')
         *finish = true;
@@ -667,9 +599,10 @@ void process_quit(bool *finish)
 
 void process_restart(GameProps *game)
 {
-    printf("Are you sure you want to restart the game? (Press 'y' to restart or 'enter' to cancel...)\n");
-    while ((getchar()) != '\n') // clear the input buffer
-        ; // null statement
+    printf("--------------------------------------------------------\n");
+    printf("Are you sure you want to restart the game?\n");
+    printf("(Input 'y' to restart or press 'enter' to cancel...)\n");
+    CLEAR_INPUT_BUFFER();
     char result = getchar();
     if (result == 'y' || result == 'Y')
         init(game);
@@ -679,24 +612,20 @@ void process_load(GameProps *game)
 {
     const char *saveFiles[MAX_SAVE_FILES] = { NULL };
     if (getSaveFiles(saveFiles)) {
-        char fileName[INPUT_BUFFER_SIZE] = { "" };
+        char fileName[BUFFER_SIZE] = { "" };
         if (saveFilesMenu(saveFiles, fileName))
             loadGame(fileName, game);
     }
     else {
         printf("ERROR: Cannot open 'save' directory!\n");
-        while ((getchar()) != '\n') // clear the input buffer
-            ; // null statement
-        getchar(); // press any key to continue
+        pressEnterToContinue();
     }
 }
 
 void prompt_invalid()
 {
-    printf("Invalid Input! Please try again. Press 'enter' to continue...\n");
-    while ((getchar()) != '\n') // clear the input buffer
-        ; // null statement
-    getchar(); // press any key to continue
+    printf("Invalid Input! Please try again.\n");
+    pressEnterToContinue();
 }
 
 bool hasWinner(const GameProps *game)
@@ -711,8 +640,7 @@ void process_win(GameProps *game)
     if (game->blackRecord[King] <= 0)
         printf("CONGRATULATION, WHITE WINS\n");
     printf("Do you want to play again? (Press 'y' to play again or 'enter' to continue...)\n");
-    while ((getchar()) != '\n') // clear the input buffer
-        ; // null statement
+    CLEAR_INPUT_BUFFER();
     char result = getchar();
     if (result == 'y' || result == 'Y')
         init(game);
