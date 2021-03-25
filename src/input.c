@@ -3,7 +3,7 @@
 #include <regex.h>
 #include <ctype.h>
 #include "input.h"
-#include "game.h"
+#include "gameProps.h"
 
 InputProps getUserInput(bool isWhiteTurns)
 {
@@ -16,6 +16,8 @@ InputProps getUserInput(bool isWhiteTurns)
     result.save = false;
     result.load = false;
     result.help = false;
+    result.redo = false;
+    result.undo = false;
 
     isWhiteTurns ? printf("White turns: ") : printf("Black turns: ");
 
@@ -55,6 +57,20 @@ InputProps getUserInput(bool isWhiteTurns)
     if (strcmp(input1, "help") == 0)
     {
         result.help = true;
+        return result;
+    }
+
+    // check if input1 is 'undo'
+    if (strcmp(input1, "undo") == 0)
+    {
+        result.undo = true;
+        return result;
+    }
+
+    // check if input1 is 'redo'
+    if (strcmp(input1, "redo") == 0)
+    {
+        result.redo = true;
         return result;
     }
 

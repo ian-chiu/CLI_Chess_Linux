@@ -3,7 +3,8 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include "fileManagement.h"
-#include "game.h"
+
+#define BUFFER_SIZE 256
 
 bool getSaveFiles(const char **saveFiles)
 {
@@ -28,7 +29,7 @@ bool getSaveFiles(const char **saveFiles)
 }
 
 // save the game to a file
-void saveGame(const GameProps *game)
+void saveGame(const GameState *gameState)
 {
     // ask the player to input the name of the save file or input 'cancel' to cancel
     char name[BUFFER_SIZE] = { '\0' };
@@ -39,7 +40,7 @@ void saveGame(const GameProps *game)
         return;
 
     FILE *fp = NULL;
-    char filepath[BUFFER_SIZE] = { "" };
+    char filepath[BUFFER_SIZE] = { '\0' };
     // connect SAVE_FOLDR_PATH and user input file name and store the result to variable 'filepath'
     strcat(filepath, SAVE_FOLDER_PATH);
     strcat(filepath, name);
@@ -49,19 +50,19 @@ void saveGame(const GameProps *game)
         // -----------------store the game data to filepath---------------
         fprintf(fp, "------------------------SNAPSHOT-----------------------\n");
         fprintf(fp, "Black left: px%d nx%d bx%d rx%d qx%d kx%d\n",
-            game->blackRecord[Pawn],
-            game->blackRecord[Knight],
-            game->blackRecord[Bishop],
-            game->blackRecord[Rook],
-            game->blackRecord[Queen],
-            game->blackRecord[King]);
+            gameState->blackRecord[Pawn],
+            gameState->blackRecord[Knight],
+            gameState->blackRecord[Bishop],
+            gameState->blackRecord[Rook],
+            gameState->blackRecord[Queen],
+            gameState->blackRecord[King]);
         fprintf(fp, "White left: Px%d Nx%d Bx%d Rx%d Qx%d Kx%d\n",
-            game->whiteRecord[Pawn],
-            game->whiteRecord[Knight],
-            game->whiteRecord[Bishop],
-            game->whiteRecord[Rook],
-            game->whiteRecord[Queen],
-            game->whiteRecord[King]);
+            gameState->whiteRecord[Pawn],
+            gameState->whiteRecord[Knight],
+            gameState->whiteRecord[Bishop],
+            gameState->whiteRecord[Rook],
+            gameState->whiteRecord[Queen],
+            gameState->whiteRecord[King]);
         fprintf(fp, "\t  _________________________________\n");
         for (int y = 0; y < BOARD_SIZE; y++)
         {
@@ -69,25 +70,25 @@ void saveGame(const GameProps *game)
             for (int x = 0; x < BOARD_SIZE; x++)
             {
                 int index = y * BOARD_SIZE + x;
-                switch (game->board[index].type)
+                switch (gameState->board[index].type)
                 {
                 case Pawn:
-                    game->board[index].isWhite ? fprintf(fp, " P ") : fprintf(fp, " p ");
+                    gameState->board[index].isWhite ? fprintf(fp, " P ") : fprintf(fp, " p ");
                     break;
                 case Knight:
-                    game->board[index].isWhite ? fprintf(fp, " N ") : fprintf(fp, " n ");
+                    gameState->board[index].isWhite ? fprintf(fp, " N ") : fprintf(fp, " n ");
                     break;
                 case Bishop:
-                    game->board[index].isWhite ? fprintf(fp, " B ") : fprintf(fp, " b ");
+                    gameState->board[index].isWhite ? fprintf(fp, " B ") : fprintf(fp, " b ");
                     break;
                 case Rook:
-                    game->board[index].isWhite ? fprintf(fp, " R ") : fprintf(fp, " r ");
+                    gameState->board[index].isWhite ? fprintf(fp, " R ") : fprintf(fp, " r ");
                     break;
                 case Queen:
-                    game->board[index].isWhite ? fprintf(fp, " Q ") : fprintf(fp, " q ");
+                    gameState->board[index].isWhite ? fprintf(fp, " Q ") : fprintf(fp, " q ");
                     break;
                 case King:
-                    game->board[index].isWhite ? fprintf(fp, " K ") : fprintf(fp, " k ");
+                    gameState->board[index].isWhite ? fprintf(fp, " K ") : fprintf(fp, " k ");
                     break;
                 default:
                     if (y % 2)
@@ -104,20 +105,20 @@ void saveGame(const GameProps *game)
         
         fprintf(fp, "--------------------------DATA-------------------------\n");
         fprintf(fp, "#ISWHITETURNS\n");
-        fprintf(fp, "%d\n", game->isWhiteTurns);
+        fprintf(fp, "%d\n", gameState->isWhiteTurns);
 
         fprintf(fp, "\n#WHITERECORD\n");
         for (int i = 0; i < NumberOfChessType; i++) 
-            fprintf(fp, "%d\n", game->whiteRecord[i]);
+            fprintf(fp, "%d\n", gameState->whiteRecord[i]);
 
         fprintf(fp, "\n#BLACKRECORD\n");
         for (int i = 0; i < NumberOfChessType; i++) 
-            fprintf(fp, "%d\n", game->blackRecord[i]);
+            fprintf(fp, "%d\n", gameState->blackRecord[i]);
 
         fprintf(fp, "\n#BOARD\n");
         // fprintf(fp, "type\tisWhite\n");
         for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) 
-            fprintf(fp, "%d\t%d\n", game->board[i].type, game->board[i].isWhite);
+            fprintf(fp, "%d\t%d\n", gameState->board[i].type, gameState->board[i].isWhite);
 
         fclose(fp);
     }
@@ -128,10 +129,10 @@ void saveGame(const GameProps *game)
 }
 
 // load the game from a save file
-void loadGame(const char *filename, GameProps *game)
+void loadGame(const char *filename, GameState *gameState)
 {
     FILE *fp = NULL;
-    char filepath[BUFFER_SIZE] = { "" };
+    char filepath[BUFFER_SIZE] = { '\0' };
     strcat(filepath, SAVE_FOLDER_PATH);
     strcat(filepath, filename);
     if ((fp = fopen(filepath, "r")) != NULL) 
@@ -143,15 +144,15 @@ void loadGame(const char *filename, GameProps *game)
         while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#BOARD\n") != 0) 
             ; // null statement
 
-        // store the data to game->board from file
+        // store the data to gameState->board from file
         for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) 
         {
             int int_type = 0;
             int int_isWhite = 0;
             fscanf(fp, "%d", &int_type);
             fscanf(fp, "%d", &int_isWhite);
-            game->board[i].type = (enum ChessType)int_type;
-            game->board[i].isWhite = (bool)int_isWhite;
+            gameState->board[i].type = (enum ChessType)int_type;
+            gameState->board[i].isWhite = (bool)int_isWhite;
         }
 
         rewind(fp); // get back to the beginning of the file
@@ -159,28 +160,28 @@ void loadGame(const char *filename, GameProps *game)
         while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#ISWHITETURNS\n") != 0) 
             ; // null statement
 
-        // store the data to game->isWhiteTurns from file
+        // store the data to gameState->isWhiteTurns from file
         int int_isWhiteTurns = 0;
         fscanf(fp, "%d", &int_isWhiteTurns);
-        game->isWhiteTurns = (bool)int_isWhiteTurns;
+        gameState->isWhiteTurns = (bool)int_isWhiteTurns;
 
         rewind(fp); // get back to the beginning of the file
         // read the file line by line until we reach the line '#WHITERECORD'
         while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#WHITERECORD\n") != 0) 
             ; // null statement 
 
-        // store the data to game->whiteRecord from file
+        // store the data to gameState->whiteRecord from file
         for (int i = 0; i < NumberOfChessType; i++) 
-            fscanf(fp, "%d", &game->whiteRecord[i]);
+            fscanf(fp, "%d", &gameState->whiteRecord[i]);
 
         rewind(fp); // get back to the beginning of the file
         // read the file line by line until we reach the line '#BLACKRECORD'
         while ((read = getline(&line, &len, fp)) != -1 && strcmp(line, "#BLACKRECORD\n") != 0) 
             ; // null statement 
 
-        // store the data to game->blackRecord from file
+        // store the data to gameState->blackRecord from file
         for (int i = 0; i < NumberOfChessType; i++) 
-            fscanf(fp, "%d", &game->blackRecord[i]);
+            fscanf(fp, "%d", &gameState->blackRecord[i]);
 
         fclose(fp);
     }

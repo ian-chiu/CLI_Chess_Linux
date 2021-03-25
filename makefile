@@ -33,3 +33,6 @@ $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 
 clean:
 	rm -r $(BUILD_DIR)
+
+run:
+	./build/chess

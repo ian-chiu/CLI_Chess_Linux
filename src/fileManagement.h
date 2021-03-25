@@ -3,10 +3,10 @@
 #define MAX_SAVE_FILES 50
 #define SAVE_FOLDER_PATH CWD "/save/"
 
-#include "game.h"
+#include "GameState.h"
 
-void saveGame(const GameProps *game);
+void saveGame(const GameState *gameState);
 
 bool getSaveFiles(const char **saveFiles);
 
-void loadGame(const char *filename, GameProps *game);
+void loadGame(const char *filename, GameState *gameState);

@@ -1,10 +1,10 @@
+#include "Game.h"
+#include "fileManagement.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "game.h"
-#include "fileManagement.h"
 
 #define CLEAR_INPUT_BUFFER() \
     int c; \
@@ -26,10 +26,6 @@ static void printAcceptableInputs()
     printf("\tmove a piece from <pos1> to <pos2>.\n\n");
     printf("<pos> promote\n");
     printf("\tpromote a pawn to a queen at <pos>.\n\n");
-    printf("undo\n");
-    printf("\tget back to the previous action.\n\n");
-    printf("redo\n");
-    printf("\trecover the latest undo.\n\n");
     printf("save\n");
     printf("\tsave the game to a file.\n\n");
     printf("load\n");
@@ -57,28 +53,29 @@ Position posStrToPos(const char *posStr)
     return pos;
 }
 
-void init(GameState *gameState, History *history)
+Game* Game__create()
 {
-    gameState->finish = false;
-    gameState->isWhiteTurns = true;
+    Game* game = (Game*)malloc(sizeof(Game));
+    game->gameState.finish = false;
+    game->gameState.isWhiteTurns = true;
 
-    gameState->whiteRecord[None] = 0;
-    gameState->whiteRecord[Pawn] = 8;
-    gameState->whiteRecord[Knight] = 2;
-    gameState->whiteRecord[Bishop] = 2;
-    gameState->whiteRecord[Rook] = 2;
-    gameState->whiteRecord[Queen] = 1;
-    gameState->whiteRecord[King] = 1;
+    game->gameState.whiteRecord[None] = 0;
+    game->gameState.whiteRecord[Pawn] = 8;
+    game->gameState.whiteRecord[Knight] = 2;
+    game->gameState.whiteRecord[Bishop] = 2;
+    game->gameState.whiteRecord[Rook] = 2;
+    game->gameState.whiteRecord[Queen] = 1;
+    game->gameState.whiteRecord[King] = 1;
 
-    gameState->blackRecord[None] = 0;
-    gameState->blackRecord[Pawn] = 8;
-    gameState->blackRecord[Knight] = 2;
-    gameState->blackRecord[Bishop] = 2;
-    gameState->blackRecord[Rook] = 2;
-    gameState->blackRecord[Queen] = 1;
-    gameState->blackRecord[King] = 1;
+    game->gameState.blackRecord[None] = 0;
+    game->gameState.blackRecord[Pawn] = 8;
+    game->gameState.blackRecord[Knight] = 2;
+    game->gameState.blackRecord[Bishop] = 2;
+    game->gameState.blackRecord[Rook] = 2;
+    game->gameState.blackRecord[Queen] = 1;
+    game->gameState.blackRecord[King] = 1;
 
-    Piece *board = gameState->board;
+    Piece *board = game->gameState.board;
 
     for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)
     {
@@ -162,10 +159,26 @@ void init(GameState *gameState, History *history)
     board[posStrToIndex("e8")].isWhite = false;
     board[posStrToIndex("e8")].type = King;
 
-    History__write(history, gameState);
+    return game;
 }
 
-bool move(const InputProps *input, GameState *gameState, History *history)
+void Game__destroy(Game *self)
+{
+    free(self);
+}
+
+Memento* Game__createMemento(Game *self)
+{
+    return Memento__create(&(self->gameState));
+}
+
+void Game__restore(Game *self, const Memento* memento)
+{
+    assert(memento);
+    self->gameState = memento->gameState;
+}
+
+bool Game__move(Game *self, const InputProps *input)
 {
     if (input->castle)
     {
@@ -174,10 +187,10 @@ bool move(const InputProps *input, GameState *gameState, History *history)
     }
 
     // use another variable to store game props items, so we do not have to type 'game->' every time
-    Piece *board = gameState->board;
-    int *whiteRecord = gameState->whiteRecord;
-    int *blackRecord = gameState->blackRecord;
-    bool isWhiteTurns = gameState->isWhiteTurns;
+    Piece *board = self->gameState.board;
+    int *whiteRecord = self->gameState.whiteRecord;
+    int *blackRecord = self->gameState.blackRecord;
+    bool isWhiteTurns = self->gameState.isWhiteTurns;
 
     bool success = false;
 
@@ -196,13 +209,13 @@ bool move(const InputProps *input, GameState *gameState, History *history)
     if (board[fromIndex].type == None) // check if the player moves any piece
     {
         printf("ERROR: There is no any piece on %s!\n", from);
-        promptInvalid();
+        Game__promptInvalid();
         return false;
     }
     else if (board[fromIndex].isWhite != isWhiteTurns) // check if the player move the component's piece
     {
         printf("ERROR: Cannot move your component's piece!\n");
-        promptInvalid();
+        Game__promptInvalid();
         return false;
     }
     else if (input->promote) // check if the player promotes a pawn
@@ -210,7 +223,7 @@ bool move(const InputProps *input, GameState *gameState, History *history)
         if (board[fromIndex].type != Pawn) 
         {
             printf("ERROR: Cannot promote the piece which is not a Pawn!\n");
-            promptInvalid();
+            Game__promptInvalid();
             return false;
         }
         else
@@ -218,29 +231,27 @@ bool move(const InputProps *input, GameState *gameState, History *history)
             // if the player promote a white pawn and its position is at row 8, then promote the pawn to a queen
             if (isWhiteTurns && from[1] == '8')
             {
-                History__write(history, gameState);
                 whiteRecord[Pawn] -= 1;
                 whiteRecord[Queen] += 1;
                 board[fromIndex].type = Queen;
                 // change turns
-                gameState->isWhiteTurns = !gameState->isWhiteTurns;
+                self->gameState.isWhiteTurns = !self->gameState.isWhiteTurns;
                 return true;
             }
             // if the player promote a black pawn and its position is at row 1, then promote the pawn to a queen
             else if (!isWhiteTurns && from[1] == '1')
             {
-                History__write(history, gameState);
                 blackRecord[Pawn] -= 1;
                 blackRecord[Queen] += 1;
                 board[fromIndex].type = Queen;
                 // change turns
-                gameState->isWhiteTurns = !gameState->isWhiteTurns;
+                self->gameState.isWhiteTurns = !self->gameState.isWhiteTurns;
                 return true;
             }
             else
             {
                 printf("ERROR: Cannot promote the Pawn at position %s.\n", from);
-                promptInvalid();
+                Game__promptInvalid();
                 return false;
             }
         }
@@ -490,35 +501,33 @@ bool move(const InputProps *input, GameState *gameState, History *history)
         // set the chess type at the 'from' position on the board to 'None'
         board[fromIndex].type = None;
         // change turns
-        gameState->isWhiteTurns = !gameState->isWhiteTurns;
-
-        History__write(history, gameState);
+        self->gameState.isWhiteTurns = !self->gameState.isWhiteTurns;
     }
     else
     {
-        promptInvalid();
+        Game__promptInvalid();
     }
 
     return success;
 }
 
-void render(const GameState *gameState)
+void Game__render(const Game *self)
 {
     system("clear");
     printf("Black left: px%d nx%d bx%d rx%d qx%d kx%d\n",
-           gameState->blackRecord[Pawn],
-           gameState->blackRecord[Knight],
-           gameState->blackRecord[Bishop],
-           gameState->blackRecord[Rook],
-           gameState->blackRecord[Queen],
-           gameState->blackRecord[King]);
+           self->gameState.blackRecord[Pawn],
+           self->gameState.blackRecord[Knight],
+           self->gameState.blackRecord[Bishop],
+           self->gameState.blackRecord[Rook],
+           self->gameState.blackRecord[Queen],
+           self->gameState.blackRecord[King]);
     printf("White left: Px%d Nx%d Bx%d Rx%d Qx%d Kx%d\n",
-           gameState->whiteRecord[Pawn],
-           gameState->whiteRecord[Knight],
-           gameState->whiteRecord[Bishop],
-           gameState->whiteRecord[Rook],
-           gameState->whiteRecord[Queen],
-           gameState->whiteRecord[King]);
+           self->gameState.whiteRecord[Pawn],
+           self->gameState.whiteRecord[Knight],
+           self->gameState.whiteRecord[Bishop],
+           self->gameState.whiteRecord[Rook],
+           self->gameState.whiteRecord[Queen],
+           self->gameState.whiteRecord[King]);
     printf("\t  _________________________________\n");
 
     // we render the board according to the player's perspective
@@ -527,29 +536,29 @@ void render(const GameState *gameState)
     // ...etc
     for (int y = 0; y < BOARD_SIZE; y++)
     {
-        gameState->isWhiteTurns ? printf("\t%d |", (9 - (y + 1))) : printf("\t%d |", y + 1);
+        self->gameState.isWhiteTurns ? printf("\t%d |", (9 - (y + 1))) : printf("\t%d |", y + 1);
         for (int x = 0; x < BOARD_SIZE; x++)
         {
-            int index = gameState->isWhiteTurns ? y * BOARD_SIZE + x : (7 - y) * BOARD_SIZE + (7 - x);
-            switch (gameState->board[index].type)
+            int index = self->gameState.isWhiteTurns ? y * BOARD_SIZE + x : (7 - y) * BOARD_SIZE + (7 - x);
+            switch (self->gameState.board[index].type)
             {
             case Pawn:
-                gameState->board[index].isWhite ? printf(" P ") : printf(" p ");
+                self->gameState.board[index].isWhite ? printf(" P ") : printf(" p ");
                 break;
             case Knight:
-                gameState->board[index].isWhite ? printf(" N ") : printf(" n ");
+                self->gameState.board[index].isWhite ? printf(" N ") : printf(" n ");
                 break;
             case Bishop:
-                gameState->board[index].isWhite ? printf(" B ") : printf(" b ");
+                self->gameState.board[index].isWhite ? printf(" B ") : printf(" b ");
                 break;
             case Rook:
-                gameState->board[index].isWhite ? printf(" R ") : printf(" r ");
+                self->gameState.board[index].isWhite ? printf(" R ") : printf(" r ");
                 break;
             case Queen:
-                gameState->board[index].isWhite ? printf(" Q ") : printf(" q ");
+                self->gameState.board[index].isWhite ? printf(" Q ") : printf(" q ");
                 break;
             case King:
-                gameState->board[index].isWhite ? printf(" K ") : printf(" k ");
+                self->gameState.board[index].isWhite ? printf(" K ") : printf(" k ");
                 break;
             default:
                 if (y % 2)
@@ -562,10 +571,10 @@ void render(const GameState *gameState)
         }
         printf("\n");
     }
-    gameState->isWhiteTurns ? printf("\t    a   b   c   d   e   f   g   h\n\n") : printf("\t    h   g   f   e   d   c   b   a\n\n");
+    self->gameState.isWhiteTurns ? printf("\t    a   b   c   d   e   f   g   h\n\n") : printf("\t    h   g   f   e   d   c   b   a\n\n");
 }
 
-void displayStartMenu()
+void Game__displayStartMenu()
 {
     system("clear");
     printf("--------------------------------WELCOME TO CHESS-------------------------------\n");
@@ -592,7 +601,7 @@ void displayStartMenu()
     getchar();
 }
 
-bool displaySaveFilesMenu(const char **saveFiles, char *filename)
+bool Game__displaySaveFilesMenu(const char **saveFiles, char *filename)
 {
     system("clear");
     printf("-------------------LOAD GAME-------------------\n\n");
@@ -621,7 +630,7 @@ bool displaySaveFilesMenu(const char **saveFiles, char *filename)
     }
 }
 
-void displayGoodbye()
+void Game__displayGoodbye()
 {
     system("clear");
     printf("----------------------Thanks for playing the game-----------------------\n");
@@ -637,32 +646,14 @@ void displayGoodbye()
     system("clear");
 }
 
-void displayHelp()
+void Game__displayHelp()
 {
     system("clear");
     printAcceptableInputs();
     pressEnterToContinue();
 }
 
-void processUndo(GameState *gameState, History *history)
-{
-    if (!History__isOldest(history))
-    {
-        GameState__destroy(gameState);
-        gameState = History__undo(history);
-    }
-}
-
-void processRedo(GameState *gameState, History *history)
-{
-    if (!History__isNewest(history))
-    {
-        GameState__destroy(gameState);
-        gameState = History__redo(history);
-    }
-}
-
-void processQuit(GameState *gameState)
+void Game__processQuit(Game *self)
 {
     printf("--------------------------------------------------------\n");
     printf("Are you sure you want to quit the game?\n");
@@ -670,10 +661,10 @@ void processQuit(GameState *gameState)
     CLEAR_INPUT_BUFFER();
     char result = getchar();
     if (result == 'y' || result == 'Y')
-        gameState->finish = true;
+        self->gameState.finish = true;
 }
 
-void processRestart(GameState *gameState, History *history)
+void Game__processRestart(Game *self, History *history)
 {
     printf("--------------------------------------------------------\n");
     printf("Are you sure you want to restart the game?\n");
@@ -681,15 +672,14 @@ void processRestart(GameState *gameState, History *history)
     CLEAR_INPUT_BUFFER();
     char result = getchar();
     if (result == 'y' || result == 'Y') {
-        GameState__destroy(gameState);
+        Game__destroy(self);
         History__destroy(history);
-        gameState = GameState__construct();
+        self = Game__create();
         history = History__construct();
-        init(gameState, history);
     }
 }
 
-void processLoad(GameState *gameState, History *history)
+void Game__processLoad(Game *self, History *history)
 {
     const char *saveFiles[MAX_SAVE_FILES] = { NULL };
     // if we get all the save files from the save directory
@@ -697,13 +687,8 @@ void processLoad(GameState *gameState, History *history)
     {
         char fileName[BUFFER_SIZE] = { '\0' };
         // if we get the file name from the save files menu, then we laod the game from the file
-        if (displaySaveFilesMenu(saveFiles, fileName)) 
-        {
-            loadGame(fileName, gameState);
-            History__destroy(history);
-            history = History__construct();
-            History__write(history, gameState);
-        }
+        if (Game__displaySaveFilesMenu(saveFiles, fileName))
+            loadGame(fileName, self);
     }
     else 
     {
@@ -712,35 +697,33 @@ void processLoad(GameState *gameState, History *history)
     }
 }
 
-void promptInvalid()
+void Game__promptInvalid()
 {
     printf("Invalid Input! Please try again.\n");
     pressEnterToContinue();
 }
 
-bool hasWinner(GameState *gameState)
+bool Game__hasWinner(Game *self)
 {
     // if any player's king is gone, then the game has a winner
-    return gameState->whiteRecord[King] <= 0 || gameState->blackRecord[King] <= 0;
+    return self->gameState.whiteRecord[King] <= 0 || self->gameState.blackRecord[King] <= 0;
 }
 
-void processWin(GameState *gameState, History *history)
+void Game__processWin(Game *self, History *history)
 {
-    if (gameState->whiteRecord[King] <= 0)
+    if (self->gameState.whiteRecord[King] <= 0)
         printf("CONGRATULATION, BLACK WINS\n");
-    if (gameState->blackRecord[King] <= 0)
+    if (self->gameState.blackRecord[King] <= 0)
         printf("CONGRATULATION, WHITE WINS\n");
     printf("Do you want to play again? (Press 'y' to play again or 'enter' to quit...)\n");
     CLEAR_INPUT_BUFFER();
     char result = getchar();
-    if (result == 'y' || result == 'Y') 
-    {
-        GameState__destroy(gameState);
+    if (result == 'y' || result == 'Y') {
+        Game__destroy(self);
         History__destroy(history);
-        gameState = GameState__construct();
+        self = Game__create();
         history = History__construct();
-        init(gameState, history);
     }
     else 
-        gameState->finish = true;
+        self->gameState.finish = true;
 }

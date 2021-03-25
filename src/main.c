@@ -2,59 +2,72 @@
 //          maybe add a history system 
 // TODO:    castle the king
 #include <stdio.h>
+#include "GameState.h"
+#include "History.h"
 #include "game.h"
 #include "fileManagement.h"
 
 int main()
 {
-    GameProps game;
+    GameState* gameState = GameState__construct();
+    History* history = History__construct();
 
-    init(&game);
-    startMenu();
+    init(gameState, history);
+    displayStartMenu();
 
-    while (!game.finish)
+    while (!gameState->finish)
     {
-        render(&game);
+        render(gameState);
 
-        if (hasWinner(&game))
+        if (hasWinner(gameState))
         {
-            process_win(&game);
+            processWin(gameState, history);
         }
         else
         {
-            InputProps input = getUserInput(game.isWhiteTurns);
+            InputProps input = getUserInput(gameState->isWhiteTurns);
 
             if (input.quit)
             {
-                process_quit(&game.finish);
+                processQuit(gameState);
             }
             else if (input.restart)
             {
-                process_restart(&game);
+                processRestart(gameState, history);
             }
             else if (input.save)
             {
-                saveGame(&game);
+                saveGame(gameState);
             }
             else if (input.load)
             {
-                process_load(&game);
+                processLoad(gameState, history);
+            }
+            else if (input.undo)
+            {
+                processUndo(gameState, history);
+            }
+            else if (input.redo)
+            {
+                processRedo(gameState, history);
             }
             else if (input.help)
             {
-                help();
+                displayHelp();
             }
             else if (!input.invalid)
             {
-                move(&input, &game);
+                move(&input, gameState, history);
             }
             else
             {
-                prompt_invalid();
+                promptInvalid();
             }
         }
     }
 
-    goodbye();
+    displayGoodbye();
+    GameState__destroy(gameState);
+    History__destroy(history);
     return 0;
 }

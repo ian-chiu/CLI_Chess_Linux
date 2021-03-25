@@ -16,6 +16,8 @@ typedef struct
     bool save;
     bool load;
     bool help;
+    bool redo;
+    bool undo;
 } InputProps;
 
 InputProps getUserInput(bool isWhiteTurns);

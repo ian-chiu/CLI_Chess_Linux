@@ -1,61 +1,29 @@
 #pragma once
 
-#include <stdbool.h>
 #include "input.h"
-
-#define BOARD_SIZE 8
-
-enum ChessType
-{
-    None,
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
-    NumberOfChessType
-};
-
-typedef struct 
-{
-    enum ChessType type;
-    bool isWhite;
-} Piece;
-
-typedef struct 
-{
-    int x;
-    int y;
-} Position;
-
-typedef struct 
-{
-    // we use 1D array to store 2D information of the board
-    // the formula of using 2D coordinate (x, y) to get the index of the board is:
-    //      index = y * BOARD_SIZE + x
-    Piece board[BOARD_SIZE * BOARD_SIZE];
-    int whiteRecord[NumberOfChessType];
-    int blackRecord[NumberOfChessType];
-    bool isWhiteTurns;
-    bool finish;
-} GameProps;
+#include "GameState.h"
+#include "History.h"
 
 int posStrToIndex(const char *pos);
 Position posStrToPos(const char *posStr);
 
-void init(GameProps *game);
-bool move(const InputProps *input, GameProps *game);
+void init(GameState *gameState, History *history);
+bool move(const InputProps *input, GameState *gameState, History *history);
+void render(const GameState *state);
 
-void render(const GameProps *game);
-void startMenu();
-bool saveFilesMenu(const char **saveFiles, char *filename);
-void goodbye();
-void help();
+void displayStartMenu();
+bool displaySaveFilesMenu(const char **saveFiles, char *filename);
+void displayGoodbye();
+void displayHelp();
+void promptInvalid();
 
-void process_quit(bool *finish);
-void process_restart(GameProps *game);
-void process_load(GameProps *game);
-void prompt_invalid();
-bool hasWinner(const GameProps *game);
-void process_win(GameProps *game);
+void processUndo(GameState *gameState, History *history);
+void processRedo(GameState *gameState, History *history);
+
+void processQuit(GameState *state);
+void processRestart(GameState *state, History *history);
+
+void processLoad(GameState *state, History *history);
+
+bool hasWinner(GameState *state);
+void processWin(GameState *state, History *history);
