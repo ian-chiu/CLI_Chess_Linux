@@ -1,7 +1,6 @@
-// FIXME:   en passant can only apply immediately after move 2 square from start position 
+// FIXME:   en passant can only apply 'immediately after' move 2 square from start position 
 //          maybe add a history system 
-// TODO: castle the king
-// TODO: prev move message
+// TODO:    castle the king
 #include <stdio.h>
 #include "game.h"
 #include "fileManagement.h"

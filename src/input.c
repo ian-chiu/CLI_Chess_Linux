@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <regex.h>
-#include <assert.h>
+#include <ctype.h>
 #include "input.h"
 #include "game.h"
 
@@ -20,7 +20,7 @@ InputProps getUserInput(bool isWhiteTurns)
     isWhiteTurns ? printf("White turns: ") : printf("Black turns: ");
 
     // ---------------input 1------------------
-    char input1[BUFFER_SIZE];
+    char input1[BUFFER_SIZE] = { '\0' };
     scanf("%s", input1);
 
     // check if input1 is 'quit'
@@ -58,24 +58,28 @@ InputProps getUserInput(bool isWhiteTurns)
         return result;
     }
 
-    regex_t regex;
-    assert(regcomp(&regex, "^[a-zA-Z][1-9]$", REG_ICASE | REG_EXTENDED) == 0);
+    if (strlen(input1) == 2 && isalpha(input1[0]) && islower(input1[0]) && isdigit(input1[1]))
+    {
+        // store first input position to result
+        result.from[0] = input1[0];
+        result.from[1] = input1[1];
+        result.from[2] = '\0';
 
-    // check if input 1 meets the regex "^[a-zA-Z][1-9]$"
-    int status1 = regexec(&regex, input1, 0, NULL, 0);
-    if (status1 != 0)
+        if (result.from[0] - 'a' >= BOARD_SIZE || result.from[1] - '0' > BOARD_SIZE || result.from[1] == '0')
+        {
+            result.invalid = true;
+            printf("ERROR: Input out of range!\n");
+            return result;
+        }
+    }
+    else 
     {
         result.invalid = true;
         return result;
     }
 
-    // store first input position to result
-    result.from[0] = input1[0];
-    result.from[1] = input1[1];
-    result.from[2] = '\0';
-
     // ---------------input 2------------------
-    char input2[20];
+    char input2[BUFFER_SIZE] = { '\0' };
     scanf("%s", input2);
 
     // check if input2 is 'promote'
@@ -85,29 +89,30 @@ InputProps getUserInput(bool isWhiteTurns)
         return result;
     }
 
-    // check if input2 is 'castle'
+    // check if input2 is 'castle', THE GAME HAS NOT SUPPORTED CASTLE YET
     if (strcmp(input2, "castle") == 0)
     {
         result.castle = true;
         return result;
     }
-
-    int status2 = regexec(&regex, input2, 0, NULL, 0);
-    result.invalid = status1 != 0 || status2 != 0;
-    if (!result.invalid)
+    
+    if (strlen(input2) == 2 && isalpha(input2[0]) && islower(input2[0]) && isdigit(input2[1]))
     {
+        // store second input position to result 'to'
         result.to[0] = input2[0];
         result.to[1] = input2[1];
         result.to[2] = '\0';
 
-        if (
-            (posStrToIndex(result.from) >= BOARD_SIZE * BOARD_SIZE || posStrToIndex(result.from) < 0) ||
-            (posStrToIndex(result.to) >= BOARD_SIZE * BOARD_SIZE || posStrToIndex(result.to) < 0))
+        if (result.to[0] - 'a' >= BOARD_SIZE || result.to[1] - '0' > BOARD_SIZE  || result.to[1] == '0')
         {
             result.invalid = true;
             printf("ERROR: Input out of range!\n");
         }
     }
-    regfree(&regex);
+    else 
+    {
+        result.invalid = true;
+    }
+
     return result;
 }

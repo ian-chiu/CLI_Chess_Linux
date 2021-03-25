@@ -31,6 +31,9 @@ typedef struct
 
 typedef struct 
 {
+    // we use 1D array to store 2D information of the board
+    // the formula of using 2D coordinate (x, y) to get the index of the board is:
+    //      index = y * BOARD_SIZE + x
     Piece board[BOARD_SIZE * BOARD_SIZE];
     int whiteRecord[NumberOfChessType];
     int blackRecord[NumberOfChessType];

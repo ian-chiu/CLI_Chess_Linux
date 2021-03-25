@@ -14,7 +14,7 @@ SRCS = $(shell find $(SRC_DIR) -name *.c)
 # Use math library
 LIBS = -lm
 
-# Predefine a "CWD" (current working directory) macro so that we can get the makefile directory inside the program (in persistance.h)
+# Predefine a "CWD" (current working directory) macro so that we can get the makefile directory inside the program (in fileManagement.h)
 PREDEFINED_MACROS = -DCWD='"$(shell pwd)"'
 
 # String substitution for every C file.
@@ -26,7 +26,7 @@ $(BUILD_DIR)/$(TARGET_EXEC) : $(OBJS)
 	$(CC) $(OBJS) -o $@ $(LIBS)
 
 # Build step for C source
-# make a 'build' directory if it is not exsist
+# make a 'build' or 'build/object' directory if it is not exsist
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 	mkdir -p $(dir $@)
 	$(CC) $(PREDEFINED_MACROS) $(CFLAGS) -c $< -o $@ 

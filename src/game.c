@@ -23,8 +23,8 @@ static void printAcceptableInputs()
     printf("ACCEPTABLE INPUTS\n\n");
     printf("<pos1> <pos2>\n");
     printf("\tmove a piece from <pos1> to <pos2>.\n\n");
-    printf("<pos1> promote\n");
-    printf("\tpromote a pawn to queen at <pos1>.\n\n");
+    printf("<pos> promote\n");
+    printf("\tpromote a pawn to a queen at <pos>.\n\n");
     printf("save\n");
     printf("\tsave the game to a file.\n\n");
     printf("load\n");
@@ -39,14 +39,16 @@ static void printAcceptableInputs()
     printf("------------------------------------------------------------------------------\n");
 }
 
-int posStrToIndex(const char *pos)
+// change a position string to the index in the 1D array board
+int posStrToIndex(const char *posStr)
 {
-    return abs(pos[1] - 48 - 8) * BOARD_SIZE + (pos[0] - 97);
+    return (BOARD_SIZE - (posStr[1] - '0')) * BOARD_SIZE + (posStr[0] - 'a');
 }
 
+// change a position string to a struct Position
 Position posStrToPos(const char *posStr)
 {
-    Position pos = {posStr[0] - 97, abs(posStr[1] - 48 - 8)};
+    Position pos = {posStr[0] - 'a', BOARD_SIZE - (posStr[1] - '0')};
     return pos;
 }
 
@@ -164,6 +166,7 @@ bool move(const InputProps *input, GameProps *game)
         return false;
     }
 
+    // use another variable to store game props items, so we do not have to type 'game->' every time
     Piece *board = game->board;
     int *whiteRecord = game->whiteRecord;
     int *blackRecord = game->blackRecord;
@@ -171,72 +174,83 @@ bool move(const InputProps *input, GameProps *game)
 
     bool success = false;
 
+    // use another variable to store input->from, so we do not have to type 'input->from' every time
     char from[3];
     strcpy(from, input->from);
+    // for simplifying calculation, we create a board index and position of 'from'
     int fromIndex = posStrToIndex(from);
     Position fromPos = posStrToPos(from);
-
-    if (board[fromIndex].type == None)
-    {
-        printf("ERROR: There is no any piece on %s!\n", from);
-        prompt_invalid();
-        return false;
-    }
-    else if (board[fromIndex].isWhite != isWhiteTurns)
-    {
-        printf("ERROR: Cannot move your component's piece!\n");
-        prompt_invalid();
-        return false;
-    }
-    else if (input->promote) // check if user promote a pawn
-    {
-        if (board[fromIndex].type != Pawn) 
-        {
-            printf("ERROR: Cannot promote the piece which is not a Pawn!");
-            prompt_invalid();
-        }
-        else
-        {
-            if (isWhiteTurns && from[1] == '8')
-            {
-                whiteRecord[Pawn] -= 1;
-                whiteRecord[Queen] += 1;
-                board[fromIndex].type = Queen;
-                success = true;
-            }
-            else if (!isWhiteTurns && from[1] == '1')
-            {
-                blackRecord[Pawn] -= 1;
-                blackRecord[Queen] += 1;
-                board[fromIndex].type = Queen;
-                success = true;
-            }
-            else
-            {
-                printf("ERROR: Cannot promote the Pawn at position %s", from);
-                prompt_invalid();
-            }
-            return success;
-        }
-    }
 
     char to[3];
     strcpy(to, input->to);
     int toIndex = posStrToIndex(to);
     Position toPos = posStrToPos(to);
 
+    if (board[fromIndex].type == None) // check if the player moves any piece
+    {
+        printf("ERROR: There is no any piece on %s!\n", from);
+        prompt_invalid();
+        return false;
+    }
+    else if (board[fromIndex].isWhite != isWhiteTurns) // check if the player move the component's piece
+    {
+        printf("ERROR: Cannot move your component's piece!\n");
+        prompt_invalid();
+        return false;
+    }
+    else if (input->promote) // check if the player promotes a pawn
+    {
+        if (board[fromIndex].type != Pawn) 
+        {
+            printf("ERROR: Cannot promote the piece which is not a Pawn!\n");
+            prompt_invalid();
+            return false;
+        }
+        else
+        {
+            // if the player promote a white pawn and its position is at row 8, then promote the pawn to a queen
+            if (isWhiteTurns && from[1] == '8')
+            {
+                whiteRecord[Pawn] -= 1;
+                whiteRecord[Queen] += 1;
+                board[fromIndex].type = Queen;
+                // change turns
+                game->isWhiteTurns = !game->isWhiteTurns;
+                return true;
+            }
+            // if the player promote a black pawn and its position is at row 1, then promote the pawn to a queen
+            else if (!isWhiteTurns && from[1] == '1')
+            {
+                blackRecord[Pawn] -= 1;
+                blackRecord[Queen] += 1;
+                board[fromIndex].type = Queen;
+                // change turns
+                game->isWhiteTurns = !game->isWhiteTurns;
+                return true;
+            }
+            else
+            {
+                printf("ERROR: Cannot promote the Pawn at position %s.\n", from);
+                prompt_invalid();
+                return false;
+            }
+        }
+    }
+
+    // check if there is a player's piece on the 'to' position
     if (board[toIndex].type != None && board[fromIndex].isWhite == board[toIndex].isWhite)
     {
         printf("ERROR: Cannot move to %s!\n", to);
-        return false;
+        success =  false;
     }
     else if (from == to)
     {
         printf("ERROR: You did not move any pieces!");
-        return false;
+        success = false;
     }
     else
     {
+        // check move rules of different type of chess piece
         switch (board[fromIndex].type)
         {
             case None:
@@ -246,15 +260,17 @@ bool move(const InputProps *input, GameProps *game)
             {
                 if (board[toIndex].type == None) // Move to empty space
                 {
-                    if (fromPos.x == toPos.x)
+                    if (fromPos.x == toPos.x) // if from and pos is on the same column
                     {
-                        if (isWhiteTurns)
+                        if (isWhiteTurns) // if is white player
                         {
+                            // if the player move forward one step or move forward two step from row 2 (from white perspective)
                             if (toPos.y == fromPos.y - 1 || (from[1] == '2' && toPos.y == fromPos.y - 2))
                                 success = true;
                         }
                         else
                         {
+                            // if the player move forward one step or move forward two step from row 2 (from black perspective)
                             if (toPos.y == fromPos.y + 1 || (from[1] == '7' && toPos.y == fromPos.y + 2))
                                 success = true;
                         }
@@ -284,10 +300,13 @@ bool move(const InputProps *input, GameProps *game)
                     //     }
                     // }
                 }
-                else // Attack enemy
+                else // Attack enemy (There is an enemy piece on the 'to' position)
                 {
+                    // check if the horizontal offset is 1 between from and to
                     if (abs(fromPos.x - toPos.x) == 1)
                     {
+                        // check if the player moves forward 1 step from the player's perspective
+                        // if true then we can move the piece, set 'success' to true
                         if (isWhiteTurns)
                         {
                             if (toPos.y == fromPos.y - 1)
@@ -306,18 +325,24 @@ bool move(const InputProps *input, GameProps *game)
             }
             case Rook:
             {
+                // if player move horizontally
                 if (fromPos.x == toPos.x)
                 {
                     success = true; // set default success to true
                     int commonX = fromPos.x;
+                    // see if there is any piece between from and to (not including from and to)
+                    // if there is, then we cannot move the piece, set 'success' to false
                     for (int i = (int)fmin(fromPos.y, toPos.y) + 1; i < (int)fmax(fromPos.y, toPos.y); i++)
                         if (board[i * BOARD_SIZE + commonX].type != None)
                             success = false;
                 }
+                // if player move vertically
                 if (fromPos.y == toPos.y)
                 {
                     success = true; // set default success to true
                     int commonY = fromPos.y;
+                    // see if there is any piece between from and to (not including from and to)
+                    // if there is, then we cannot move the piece, set 'success' to false
                     for (int i = (int)fmin(fromPos.x, toPos.x) + 1; i < (int)fmax(fromPos.x, toPos.x); i++)
                         if (board[commonY * BOARD_SIZE + i].type != None)
                             success = false;
@@ -330,6 +355,7 @@ bool move(const InputProps *input, GameProps *game)
             {
                 int offsetY = fromPos.y - toPos.y;
                 int offsetX = fromPos.x - toPos.x;
+                // check if the horizontal and vertical offset between from and to are equal
                 if (abs(offsetX) == abs(offsetY))
                 {
                     success = true; // set default success to true
@@ -338,7 +364,11 @@ bool move(const InputProps *input, GameProps *game)
                     int maxX = (int)fmax(fromPos.x, toPos.x);
                     int maxY = (int)fmax(fromPos.y, toPos.y);
                     int x = minX + 1;
-                    int y = offsetX * offsetY > 0 ? minY + 1 : maxY - 1;
+                    // we have to deal with two different diagnoals situation
+                    // if the player move on the up right diagnoal(/), then y = minY + 1
+                    // if the player move on the up left diagnoal(\), then y = maxY - 1
+                    int y = (offsetX * offsetY > 0) ? minY + 1 : maxY - 1;
+                    // check if there are any piece between from and to diagnoal (not including from and to)
                     while (x < maxX && y < maxY)
                     {
                         if (board[y * BOARD_SIZE + x].type != None)
@@ -347,8 +377,10 @@ bool move(const InputProps *input, GameProps *game)
                             break;
                         }
                         x++;
-                        offsetX * offsetY > 0 ? y++ : y--;
-                    
+                        // we have to deal with two different diagnoals situation
+                        // if the player move on the up right diagnoal(/), y++
+                        // if the player move on the up left diagnoal(\), y--
+                        (offsetX * offsetY > 0) ? y++ : y--;
                     }
                 }
                 if (success == false)
@@ -406,7 +438,6 @@ bool move(const InputProps *input, GameProps *game)
                         }
                         x++;
                         offsetX * offsetY > 0 ? y++ : y--;
-                    
                     }
                 }
 
@@ -418,7 +449,8 @@ bool move(const InputProps *input, GameProps *game)
             {
                 int offsetY = abs(fromPos.y - toPos.y);
                 int offsetX = abs(fromPos.x - toPos.x);
-                if (offsetX + offsetY <= 2)
+                // if the horizontal offset and the vertical offset are less than 1, then we can move the piece
+                if (offsetX <= 1 && offsetY <= 1)
                     success = true;
                 if (success == false)
                     printf("ERROR: Invalid move of King!\n");
@@ -432,8 +464,11 @@ bool move(const InputProps *input, GameProps *game)
         
     }
 
+    // if the move is valid, we move the piece
     if (success)
     {
+        // check if there is any enemy piece at 'to'
+        // if is, minus the count of piece on the record by one
         if (board[toIndex].type != None)
         {
             if (isWhiteTurns)
@@ -441,8 +476,11 @@ bool move(const InputProps *input, GameProps *game)
             else
                 whiteRecord[board[toIndex].type] -= 1;
         }
+        // move the piece from 'from' to 'to'
         board[toIndex] = board[fromIndex];
+        // set the chess type at the 'from' position on the board to 'None'
         board[fromIndex].type = None;
+        // change turns
         game->isWhiteTurns = !game->isWhiteTurns;
     }
     else
@@ -456,21 +494,26 @@ bool move(const InputProps *input, GameProps *game)
 void render(const GameProps *game)
 {
     system("clear");
-    printf("Black left: ♙ x%d ♘ x%d ♗ x%d ♖ x%d ♕ x%d ♔ x%d\n",
+    printf("Black left: px%d nx%d bx%d rx%d qx%d kx%d\n",
            game->blackRecord[Pawn],
            game->blackRecord[Knight],
            game->blackRecord[Bishop],
            game->blackRecord[Rook],
            game->blackRecord[Queen],
            game->blackRecord[King]);
-    printf("White left: ♟︎ x%d ♞ x%d ♝ x%d ♜ x%d ♛ x%d ♚ x%d\n",
+    printf("White left: Px%d Nx%d Bx%d Rx%d Qx%d Kx%d\n",
            game->whiteRecord[Pawn],
            game->whiteRecord[Knight],
            game->whiteRecord[Bishop],
            game->whiteRecord[Rook],
            game->whiteRecord[Queen],
            game->whiteRecord[King]);
-    printf("\t  _________________________\n");
+    printf("\t  _________________________________\n");
+
+    // we render the board according to the player's perspective
+    // if the player is white, we render the '8' row first from top
+    // if the player is black, we render the '1' row first from top
+    // ...etc
     for (int y = 0; y < BOARD_SIZE; y++)
     {
         game->isWhiteTurns ? printf("\t%d |", (9 - (y + 1))) : printf("\t%d |", y + 1);
@@ -480,41 +523,43 @@ void render(const GameProps *game)
             switch (game->board[index].type)
             {
             case Pawn:
-                game->board[index].isWhite ? printf("♟︎ ") : printf("♙ ");
+                game->board[index].isWhite ? printf(" P ") : printf(" p ");
                 break;
             case Knight:
-                game->board[index].isWhite ? printf("♞ ") : printf("♘ ");
+                game->board[index].isWhite ? printf(" N ") : printf(" n ");
                 break;
             case Bishop:
-                game->board[index].isWhite ? printf("♝ ") : printf("♗ ");
+                game->board[index].isWhite ? printf(" B ") : printf(" b ");
                 break;
             case Rook:
-                game->board[index].isWhite ? printf("♜ ") : printf("♖ ");
+                game->board[index].isWhite ? printf(" R ") : printf(" r ");
                 break;
             case Queen:
-                game->board[index].isWhite ? printf("♛ ") : printf("♕ ");
+                game->board[index].isWhite ? printf(" Q ") : printf(" q ");
                 break;
             case King:
-                game->board[index].isWhite ? printf("♚ ") : printf("♔ ");
+                game->board[index].isWhite ? printf(" K ") : printf(" k ");
                 break;
             default:
                 if (y % 2)
-                    index % 2 ? printf("__") : printf("##");
+                    index % 2 ? printf("___") : printf("###");
                 else
-                    index % 2 ? printf("##") : printf("__");
+                    index % 2 ? printf("###") : printf("___");
                 break;
             }
             printf("|");
         }
         printf("\n");
     }
-    game->isWhiteTurns ? printf("\t   a  b  c  d  e  f  g  h\n\n") : printf("\t   h  g  f  e  d  c  b  a\n\n");
+    game->isWhiteTurns ? printf("\t    a   b   c   d   e   f   g   h\n\n") : printf("\t    h   g   f   e   d   c   b   a\n\n");
 }
 
 bool saveFilesMenu(const char **saveFiles, char *filename)
 {
     system("clear");
+    printf("-------------------LOAD GAME-------------------\n\n");
     int nFiles = 0;
+    // print all the save files and their corresponding indicies
     for (int i = 0; ; i++) 
     {
         if (!saveFiles[i])
@@ -523,8 +568,10 @@ bool saveFilesMenu(const char **saveFiles, char *filename)
         nFiles++;
     }
     
-    printf("Please input the number of the file: ");
+    // let players choose the save file by the index
+    printf("\nPlease input the number of the file: ");
     unsigned int num = 0;
+    // if the input is valid 
     if (scanf("%u", &num) && num <= nFiles) 
     {
         strcpy(filename, saveFiles[num - 1]);
@@ -564,7 +611,7 @@ void startMenu()
     printf("\t  |__|    )___(    )___(    /____\\    /____\\    /_____\\                \n");
     printf("\t (====)  (=====)  (=====)  (======)  (======)  (=======)                  \n");
     printf("\t }===={  }====={  }====={  }======{  }======{  }======={                  \n");
-    printf("\t(______)(_______)(_______)(________)(________)(_________)create by jgs    \n\n");
+    printf("\t(______)(_______)(_______)(________)(________)(_________)created by jgs    \n\n");
     printAcceptableInputs();
     printf("Press enter to continue...\n");
     getchar();
@@ -573,7 +620,7 @@ void startMenu()
 void goodbye()
 {
     system("clear");
-    printf("--------------------------Thanks for playing the game---------------------------\n");
+    printf("----------------------Thanks for playing the game-----------------------\n");
     printf("\t                       _ _                          \n");
     printf("\t                      | | |                         \n");
     printf("\t  __ _  ___   ___   __| | |__  _   _  ___           \n");
@@ -590,7 +637,7 @@ void process_quit(bool *finish)
 {
     printf("--------------------------------------------------------\n");
     printf("Are you sure you want to quit the game?\n");
-    printf("(Input 'y' to restart or press 'enter' to cancel...)\n");
+    printf("(Input 'y' to quit or press 'enter' to cancel...)\n");
     CLEAR_INPUT_BUFFER();
     char result = getchar();
     if (result == 'y' || result == 'Y')
@@ -611,12 +658,16 @@ void process_restart(GameProps *game)
 void process_load(GameProps *game)
 {
     const char *saveFiles[MAX_SAVE_FILES] = { NULL };
-    if (getSaveFiles(saveFiles)) {
-        char fileName[BUFFER_SIZE] = { "" };
+    // if we get all the save files from the save directory
+    if (getSaveFiles(saveFiles)) 
+    {
+        char fileName[BUFFER_SIZE] = { '\0' };
+        // if we get the file name from the save files menu, then we laod the game from the file
         if (saveFilesMenu(saveFiles, fileName))
             loadGame(fileName, game);
     }
-    else {
+    else 
+    {
         printf("ERROR: Cannot open 'save' directory!\n");
         pressEnterToContinue();
     }
@@ -630,6 +681,7 @@ void prompt_invalid()
 
 bool hasWinner(const GameProps *game)
 {
+    // if any player's king is gone, then the game has a winner
     return game->whiteRecord[King] <= 0 || game->blackRecord[King] <= 0;
 }
 
@@ -639,7 +691,7 @@ void process_win(GameProps *game)
         printf("CONGRATULATION, BLACK WINS\n");
     if (game->blackRecord[King] <= 0)
         printf("CONGRATULATION, WHITE WINS\n");
-    printf("Do you want to play again? (Press 'y' to play again or 'enter' to continue...)\n");
+    printf("Do you want to play again? (Press 'y' to play again or 'enter' to quit...)\n");
     CLEAR_INPUT_BUFFER();
     char result = getchar();
     if (result == 'y' || result == 'Y')
