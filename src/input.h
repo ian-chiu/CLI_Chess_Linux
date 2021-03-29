@@ -20,4 +20,4 @@ typedef struct
     bool undo;
 } InputProps;
 
-InputProps getUserInput(bool isWhiteTurns);
+InputProps getUserInput();

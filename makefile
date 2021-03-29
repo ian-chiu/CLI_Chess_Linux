@@ -11,8 +11,9 @@ OBJ_DIR = $(BUILD_DIR)/objects
 # Find all the C files we want to compile
 SRCS = $(shell find $(SRC_DIR) -name *.c)
 
-# Use math library
-LIBS = -lm
+LIBS = -L./lib -lm -lev
+
+INCLUDES = -I./include
 
 # Predefine a "CWD" (current working directory) macro so that we can get the makefile directory inside the program (in fileManagement.h)
 PREDEFINED_MACROS = -DCWD='"$(shell pwd)"'
@@ -29,7 +30,7 @@ $(BUILD_DIR)/$(TARGET_EXEC) : $(OBJS)
 # make a 'build' or 'build/object' directory if it is not exsist
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 	mkdir -p $(dir $@)
-	$(CC) $(PREDEFINED_MACROS) $(CFLAGS) -c $< -o $@ 
+	$(CC) $(PREDEFINED_MACROS) $(CFLAGS) $(INCLUDES) -c $< -o $@ 
 
 clean:
 	rm -r $(BUILD_DIR)

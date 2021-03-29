@@ -563,6 +563,13 @@ void render(const GameState *gameState)
         printf("\n");
     }
     gameState->isWhiteTurns ? printf("\t    a   b   c   d   e   f   g   h\n\n") : printf("\t    h   g   f   e   d   c   b   a\n\n");
+    gameState->isWhiteTurns ? printf("White turns: \n") : printf("Black turns: \n");
+    // if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) > 0)
+    // {
+    //     char *inputBuffer = NULL;
+    //     fgets(stdin, "%s", inputBuffer);
+    //     fprintf(stdout, "%s", inputBuffer);
+    // }
 }
 
 void displayStartMenu()

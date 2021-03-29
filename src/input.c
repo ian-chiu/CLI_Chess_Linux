@@ -5,7 +5,7 @@
 #include "input.h"
 #include "gameProps.h"
 
-InputProps getUserInput(bool isWhiteTurns)
+InputProps getUserInput()
 {
     InputProps result;
     result.quit = false;
@@ -18,8 +18,6 @@ InputProps getUserInput(bool isWhiteTurns)
     result.help = false;
     result.redo = false;
     result.undo = false;
-
-    isWhiteTurns ? printf("White turns: ") : printf("Black turns: ");
 
     // ---------------input 1------------------
     char input1[BUFFER_SIZE] = { '\0' };
