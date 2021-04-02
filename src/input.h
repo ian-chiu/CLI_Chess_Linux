@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <ncurses.h>
 
 #define BUFFER_SIZE 256
 
@@ -20,4 +21,4 @@ typedef struct
     bool undo;
 } InputProps;
 
-InputProps getUserInput();
+InputProps getUserInput(WINDOW *inputWindow, char *inputStr);

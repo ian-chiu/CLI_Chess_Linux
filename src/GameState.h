@@ -14,3 +14,4 @@ typedef struct
 GameState* GameState__construct();
 void GameState__destroy(GameState *self);
 GameState* GameState__copyConstruct(const GameState *copy);
+void GameState__clear(GameState *self);

@@ -5,7 +5,9 @@
 #include "input.h"
 #include "gameProps.h"
 
-InputProps getUserInput()
+#include <ncurses.h>
+
+InputProps getUserInput(WINDOW *inputWindow, char *inputStr)
 {
     InputProps result;
     result.quit = false;
@@ -19,9 +21,12 @@ InputProps getUserInput()
     result.redo = false;
     result.undo = false;
 
+    wrefresh(inputWindow);
+
     // ---------------input 1------------------
     char input1[BUFFER_SIZE] = { '\0' };
-    scanf("%s", input1);
+    char input2[BUFFER_SIZE] = { '\0' };
+    sscanf(inputStr, "%s %s", input1, input2);
 
     // check if input1 is 'quit'
     if (strcmp(input1, "quit") == 0)
@@ -82,7 +87,7 @@ InputProps getUserInput()
         if (result.from[0] - 'a' >= BOARD_SIZE || result.from[1] - '0' > BOARD_SIZE || result.from[1] == '0')
         {
             result.invalid = true;
-            printf("ERROR: Input out of range!\n");
+           printw("ERROR: Input out of range!\n");
             return result;
         }
     }
@@ -93,8 +98,8 @@ InputProps getUserInput()
     }
 
     // ---------------input 2------------------
-    char input2[BUFFER_SIZE] = { '\0' };
-    scanf("%s", input2);
+    // char input2[BUFFER_SIZE] = { '\0' };
+    // scanw("%s", input2);
 
     // check if input2 is 'promote'
     if (strcmp(input2, "promote") == 0)
@@ -120,7 +125,7 @@ InputProps getUserInput()
         if (result.to[0] - 'a' >= BOARD_SIZE || result.to[1] - '0' > BOARD_SIZE  || result.to[1] == '0')
         {
             result.invalid = true;
-            printf("ERROR: Input out of range!\n");
+           printw("ERROR: Input out of range!\n");
         }
     }
     else 

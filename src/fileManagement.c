@@ -33,8 +33,8 @@ void saveGame(const GameState *gameState)
 {
     // ask the player to input the name of the save file or input 'cancel' to cancel
     char name[BUFFER_SIZE] = { '\0' };
-    printf("------------------------------------------------------------------------\n");
-    printf("Please input the name of the save file (or input 'cancel' to cancel): ");
+   printw("------------------------------------------------------------------------\n");
+   printw("Please input the name of the save file (or input 'cancel' to cancel): ");
     scanf("%s", name);
     if (strcmp(name, "cancel") == 0) 
         return;
@@ -124,7 +124,7 @@ void saveGame(const GameState *gameState)
     }
     else 
     {
-        printf("Cannot write %s", filepath);
+       printw("Cannot write %s", filepath);
     }
 }
 
@@ -187,6 +187,6 @@ void loadGame(const char *filename, GameState *gameState)
     }
     else 
     {
-        printf("Cannot read %s\n", filepath);
+       printw("Cannot read %s\n", filepath);
     }
 }

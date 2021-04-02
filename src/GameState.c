@@ -1,21 +1,26 @@
 #include "GameState.h"
 #include <stdlib.h>
 
-GameState* GameState__construct()
+static void GameState__init(GameState *self)
 {
-    GameState* result = (GameState*)malloc(sizeof(GameState));
     for (int i =0; i < BOARD_SIZE * BOARD_SIZE; i++)
     {
-        result->board[i].isWhite = true;
-        result->board[i].type = None;
+        self->board[i].isWhite = true;
+        self->board[i].type = None;
     }
     for (int i = 0; i < NumberOfChessType; i++)
     {
-        result->whiteRecord[i] = 0;
-        result->blackRecord[i] = 0;
+        self->whiteRecord[i] = 0;
+        self->blackRecord[i] = 0;
     }
-    result->isWhiteTurns = true;
-    result->finish = false;
+    self->isWhiteTurns = true;
+    self->finish = false;
+}
+
+GameState* GameState__construct()
+{
+    GameState* result = (GameState*)malloc(sizeof(GameState));
+    GameState__init(result);
     return result;
 }
 
@@ -41,4 +46,9 @@ void GameState__destroy(GameState *self)
 {
     free(self);
     self = NULL;
+}
+
+void GameState__clear(GameState *self)
+{
+    GameState__init(self);
 }

@@ -74,6 +74,11 @@ GameState* History__redo(History *self)
     return nextGameState;
 }
 
+void History__clear(History *self)
+{
+    History__init(self);
+}
+
 // const GameState* History__pop(History *self)
 // {
 //     assert(!History__empty(self));

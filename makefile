@@ -3,6 +3,7 @@ TARGET_EXEC = chess
 
 CC = gcc
 CFLAGS = -Wall -g
+# CFLAGS = -O3
 
 BUILD_DIR = ./build
 SRC_DIR = ./src
@@ -11,7 +12,7 @@ OBJ_DIR = $(BUILD_DIR)/objects
 # Find all the C files we want to compile
 SRCS = $(shell find $(SRC_DIR) -name *.c)
 
-LIBS = -L./lib -lm -lev
+LIBS = -L./lib -lm -lev -lncurses
 
 INCLUDES = -I./include
 
