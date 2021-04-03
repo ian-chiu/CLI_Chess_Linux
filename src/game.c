@@ -50,6 +50,7 @@ static void printAcceptableInputs()
     printw("\tsee all acceptable inputs.\n\n");
     printw("The game does not support 'castle the king' and 'en passant'.\n");
     printw("------------------------------------------------------------------------------\n");
+    // wclear(gameWindow);
 }
 
 // change a position string to the index in the 1D array board
@@ -514,25 +515,25 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
     return success;
 }
 
-void render(WINDOW *gameWindow, const GameState *gameState, EventState *eventState)
+void render(const GameState *gameState, EventState *eventState)
 {
-    wmove(eventState->gameWindow, 0, 0);
-    wprintw(eventState->gameWindow, "%f sec left...\n", eventState->countdown);
-    wprintw(gameWindow, "Black left: px%d nx%d bx%d rx%d qx%d kx%d\n",
+    move(0, 0);
+    printw("%f sec left...\n", eventState->countdown);
+    printw("Black left: px%d nx%d bx%d rx%d qx%d kx%d\n",
            gameState->blackRecord[Pawn],
            gameState->blackRecord[Knight],
            gameState->blackRecord[Bishop],
            gameState->blackRecord[Rook],
            gameState->blackRecord[Queen],
            gameState->blackRecord[King]);
-    wprintw(gameWindow, "White left: Px%d Nx%d Bx%d Rx%d Qx%d Kx%d\n",
+    printw("White left: Px%d Nx%d Bx%d Rx%d Qx%d Kx%d\n",
            gameState->whiteRecord[Pawn],
            gameState->whiteRecord[Knight],
            gameState->whiteRecord[Bishop],
            gameState->whiteRecord[Rook],
            gameState->whiteRecord[Queen],
            gameState->whiteRecord[King]);
-    wprintw(gameWindow, "\t  _________________________________\n");
+    printw("\t  _________________________________\n");
 
     // we render the board according to the player's perspective
     // if the player is white, we render the '8' row first from top
@@ -540,50 +541,43 @@ void render(WINDOW *gameWindow, const GameState *gameState, EventState *eventSta
     // ...etc
     for (int y = 0; y < BOARD_SIZE; y++)
     {
-        gameState->isWhiteTurns ? wprintw(gameWindow, "\t%d |", (9 - (y + 1))) : wprintw(gameWindow, "\t%d |", y + 1);
+        gameState->isWhiteTurns ? printw("\t%d |", (9 - (y + 1))) : printw("\t%d |", y + 1);
         for (int x = 0; x < BOARD_SIZE; x++)
         {
             int index = gameState->isWhiteTurns ? y * BOARD_SIZE + x : (7 - y) * BOARD_SIZE + (7 - x);
             switch (gameState->board[index].type)
             {
             case Pawn:
-                gameState->board[index].isWhite ? wprintw(gameWindow, " P ") : wprintw(gameWindow, " p ");
+                gameState->board[index].isWhite ? printw(" P ") : printw(" p ");
                 break;
             case Knight:
-                gameState->board[index].isWhite ? wprintw(gameWindow, " N ") : wprintw(gameWindow, " n ");
+                gameState->board[index].isWhite ? printw(" N ") : printw(" n ");
                 break;
             case Bishop:
-                gameState->board[index].isWhite ? wprintw(gameWindow, " B ") : wprintw(gameWindow, " b ");
+                gameState->board[index].isWhite ? printw(" B ") : printw(" b ");
                 break;
             case Rook:
-                gameState->board[index].isWhite ? wprintw(gameWindow, " R ") : wprintw(gameWindow, " r ");
+                gameState->board[index].isWhite ? printw(" R ") : printw(" r ");
                 break;
             case Queen:
-                gameState->board[index].isWhite ? wprintw(gameWindow, " Q ") : wprintw(gameWindow, " q ");
+                gameState->board[index].isWhite ? printw(" Q ") : printw(" q ");
                 break;
             case King:
-                gameState->board[index].isWhite ? wprintw(gameWindow, " K ") : wprintw(gameWindow, " k ");
+                gameState->board[index].isWhite ? printw(" K ") : printw(" k ");
                 break;
             default:
                 if (y % 2)
-                    index % 2 ? wprintw(gameWindow, "___") : wprintw(gameWindow, "###");
+                    index % 2 ? printw("___") : printw("###");
                 else
-                    index % 2 ? wprintw(gameWindow, "###") : wprintw(gameWindow, "___");
+                    index % 2 ? printw("###") : printw("___");
                 break;
             }
-            wprintw(gameWindow, "|");
+            printw("|");
         }
-        wprintw(gameWindow, "\n");
+        printw("\n");
     }
-    gameState->isWhiteTurns ? wprintw(gameWindow, "\t    a   b   c   d   e   f   g   h\n\n") : wprintw(gameWindow, "\t    h   g   f   e   d   c   b   a\n\n");
-    // gameState->isWhiteTurns ? wprintw(gameWindow, "White turns: \n") : wprintw(gameWindow, "Black turns: \n");
-    // if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) > 0)
-    // {
-    //     char *inputBuffer = NULL;
-    //     fgets(stdin, "%s", inputBuffer);
-    //     fprintf(stdout, "%s", inputBuffer);
-    // }
-    // refresh();
+    gameState->isWhiteTurns ? printw("\t    a   b   c   d   e   f   g   h\n\n") : printw("\t    h   g   f   e   d   c   b   a\n\n");
+    // gameState->isWhiteTurns ? printw("White turns: \n") : printw("Black turns: \n");
 }
 
 void displayStartMenu()
