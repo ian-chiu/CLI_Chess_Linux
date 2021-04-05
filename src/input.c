@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <regex.h>
 #include <ctype.h>
 #include "input.h"
@@ -7,7 +8,7 @@
 
 #include <ncurses.h>
 
-InputProps getUserInput(WINDOW *inputWindow, char *inputStr)
+InputProps getUserInput(char *inputStr)
 {
     InputProps result;
     result.quit = false;
@@ -20,8 +21,10 @@ InputProps getUserInput(WINDOW *inputWindow, char *inputStr)
     result.help = false;
     result.redo = false;
     result.undo = false;
+    result.replay = false;
+    result.timer = 0.0;
 
-    wrefresh(inputWindow);
+    refresh();
 
     // ---------------input 1------------------
     char input1[BUFFER_SIZE] = { '\0' };
@@ -75,6 +78,18 @@ InputProps getUserInput(WINDOW *inputWindow, char *inputStr)
     {
         result.redo = true;
         return result;
+    }
+
+    // check if input1 is 'redo'
+    if (strcmp(input1, "replay") == 0)
+    {
+        result.replay = true;
+        return result;
+    }
+
+    if (strcmp(input1, "timer") == 0)
+    {
+        result.timer = atof(input2);
     }
 
     if (strlen(input1) == 2 && isalpha(input1[0]) && islower(input1[0]) && isdigit(input1[1]))

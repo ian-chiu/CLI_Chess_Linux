@@ -9,23 +9,6 @@
 #include <unistd.h>
 #include <ncurses.h>
 
-// #define CLEAR_INPUT_BUFFER()                                   
-//     int c;                                                     
-//     while (!feof(stdin) && (c = getchar()) != '\n' && c != EOF) 
-//     {                                                           
-//     }
-
-// static void pressEnterToContinue()
-// {
-//     printw("Press enter to continue...\n");
-//     // CLEAR_INPUT_BUFFER();
-//     char enter = 0;
-//     while (enter != '\r' && enter != '\n')
-//     {
-//         enter = getchar();
-//     }
-// }
-
 static void printAcceptableInputs()
 {
     printw("------------------------------------------------------------------------------\n");
@@ -38,6 +21,8 @@ static void printAcceptableInputs()
     printw("\tget back to the previous action.\n\n");
     printw("redo\n");
     printw("\trecover the latest undo.\n\n");
+    printw("replay\n");
+    printw("\tsee the replay of the current game.\n\n");
     printw("save\n");
     printw("\tsave the game to a file.\n\n");
     printw("load\n");
@@ -48,9 +33,37 @@ static void printAcceptableInputs()
     printw("\trestart the game.\n\n");
     printw("help\n");
     printw("\tsee all acceptable inputs.\n\n");
+    printw("timer <float>\n");
+    printw("\tset the countdown timer to <float> sec.\n\n");
     printw("The game does not support 'castle the king' and 'en passant'.\n");
     printw("------------------------------------------------------------------------------\n");
-    // wclear(gameWindow);
+}
+
+void displayMessage(char *message)
+{
+    move(21, 0);
+    printw("----------------------MESSAGE------------------------\n");
+    printw(message);
+    refresh();
+}
+
+void clearMessage()
+{
+    move(20, 0);
+    clrtobot();
+    refresh();
+}
+
+void switchTurns(bool isWhiteTurns)
+{
+    clear();
+    char message[BUFFER_SIZE] = { 0 };
+    sprintf(message, "%s turns.", isWhiteTurns ? "White" : "Black");	
+    mvprintw(LINES/2,(COLS-strlen(message))/2,"%s",message);
+    mvprintw(LINES - 1, 0, "Press any key to continue...");
+    refresh();
+    getch();
+    clear();
 }
 
 // change a position string to the index in the 1D array board
@@ -174,11 +187,11 @@ void init(GameState *gameState, History *history)
     History__write(history, gameState);
 }
 
-bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameState, History *history)
+bool movePiece(const InputProps *input, GameState *gameState, History *history)
 {
     if (input->castle)
     {
-        wprintw(inputWindow, "ERROR: Have not supported castle yet!\n");
+        displayMessage("ERROR: Have not supported castle yet!\n");
         return false;
     }
 
@@ -204,25 +217,24 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
 
     if (board[fromIndex].type == None) // check if the player moves any piece
     {
-        wprintw(inputWindow, "ERROR: There is no any piece on %s!\n", from);
-        promptInvalid(inputWindow);
-        wrefresh(inputWindow);
+        char message[BUFFER_SIZE] = { 0 };
+        sprintf(message, "ERROR: There is no any piece on %s!\n", from);
+        displayMessage(message);
+        refresh();
         return false;
     }
     else if (board[fromIndex].isWhite != isWhiteTurns) // check if the player move the component's piece
     {
-        wprintw(inputWindow, "ERROR: Cannot move your component's piece!\n");
-        promptInvalid(inputWindow);
-        wrefresh(inputWindow);
+        displayMessage("ERROR: Cannot move your component's piece!\n");
+        refresh();
         return false;
     }
     else if (input->promote) // check if the player promotes a pawn
     {
         if (board[fromIndex].type != Pawn)
         {
-            wprintw(inputWindow, "ERROR: Cannot promote the piece which is not a Pawn!\n");
-            promptInvalid(inputWindow);
-            wrefresh(inputWindow);
+            displayMessage("ERROR: Cannot promote the piece which is not a Pawn!\n");
+            refresh();
             return false;
         }
         else
@@ -251,9 +263,9 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
             }
             else
             {
-                wprintw(inputWindow, "ERROR: Cannot promote the Pawn at position %s.\n", from);
-                promptInvalid(inputWindow);
-                wrefresh(inputWindow);
+                char message[BUFFER_SIZE] = { 0 };
+                sprintf(message, "ERROR: Cannot promote a Pawn at position %s!\n", from);
+                displayMessage(message);
                 return false;
             }
         }
@@ -262,12 +274,14 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
     // check if there is a player's piece on the 'to' position
     if (board[toIndex].type != None && board[fromIndex].isWhite == board[toIndex].isWhite)
     {
-        wprintw(inputWindow, "ERROR: Cannot move to %s!\n", to);
+        char message[BUFFER_SIZE] = { 0 };
+        sprintf(message, "ERROR: Cannot move to %s!\n", to);
+        displayMessage(message);
         success = false;
     }
     else if (from == to)
     {
-        wprintw(inputWindow, "ERROR: You did not move any pieces!");
+        displayMessage("ERROR: You did not move any pieces!");
         success = false;
     }
     else
@@ -276,8 +290,12 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
         switch (board[fromIndex].type)
         {
             case None:
-                wprintw(inputWindow, "ERROR: There is no any piece at %s\n", from);
+            {
+                char message[BUFFER_SIZE] = { 0 };
+                sprintf(message, "ERROR: There is no any piece at %s\n", from);
+                displayMessage(message);
                 break;
+            }
             case Pawn:
             {
                 if (board[toIndex].type == None) // Move to empty space
@@ -342,7 +360,7 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
                     }
                 }
                 if (success == false)
-                    wprintw(inputWindow, "ERROR: Invalid move of Pawn!\n");
+                    displayMessage("ERROR: Invalid move of Pawn!\n");
                 break;
             }
             case Rook:
@@ -370,7 +388,7 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
                             success = false;
                 }
                 if (success == false)
-                    wprintw(inputWindow, "ERROR: Invalid move of Rook!\n");
+                    displayMessage("ERROR: Invalid move of Rook!\n");
                 break;
             }
             case Bishop:
@@ -406,7 +424,7 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
                     }
                 }
                 if (success == false)
-                    wprintw(inputWindow, "ERROR: Invalid move of Bishop!\n");
+                    displayMessage("ERROR: Invalid move of Bishop!\n");
                 break;
             }
             case Knight:
@@ -416,7 +434,7 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
                 if ((offsetX == 2 && offsetY == 1) || (offsetY == 2 && offsetX == 1))
                     success = true;
                 if (success == false)
-                    wprintw(inputWindow, "ERROR: Invalid move of Knight!\n");
+                    displayMessage("ERROR: Invalid move of Knight!\n");
                 break;
             }
             case Queen:
@@ -464,7 +482,7 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
                 }
 
                 if (success == false)
-                    wprintw(inputWindow, "ERROR: Invalid move of Queen!\n");
+                    displayMessage("ERROR: Invalid move of Queen!\n");
                 break;
             }
             case King:
@@ -475,12 +493,12 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
                 if (offsetX <= 1 && offsetY <= 1)
                     success = true;
                 if (success == false)
-                    wprintw(inputWindow, "ERROR: Invalid move of King!\n");
+                    displayMessage("ERROR: Invalid move of King!\n");
                 break;
             }
             default:
             {
-                wprintw(inputWindow, "ERROR: No such type of chess piece.\n");
+                displayMessage("ERROR: No such type of chess piece.\n");
             }
         }
     }
@@ -506,11 +524,6 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
 
         History__write(history, gameState);
     }
-    else
-    {
-        promptInvalid(inputWindow);
-        wrefresh(inputWindow);
-    }
 
     return success;
 }
@@ -518,7 +531,7 @@ bool movePiece(WINDOW *inputWindow, const InputProps *input, GameState *gameStat
 void render(const GameState *gameState, EventState *eventState)
 {
     move(0, 0);
-    printw("%f sec left...\n", eventState->countdown);
+    printw("%f sec left...\n\n\n", eventState->countdown);
     printw("Black left: px%d nx%d bx%d rx%d qx%d kx%d\n",
            gameState->blackRecord[Pawn],
            gameState->blackRecord[Knight],
@@ -533,12 +546,12 @@ void render(const GameState *gameState, EventState *eventState)
            gameState->whiteRecord[Rook],
            gameState->whiteRecord[Queen],
            gameState->whiteRecord[King]);
-    printw("\t  _________________________________\n");
-
+    
     // we render the board according to the player's perspective
     // if the player is white, we render the '8' row first from top
     // if the player is black, we render the '1' row first from top
     // ...etc
+    printw("\t  _________________________________\n");
     for (int y = 0; y < BOARD_SIZE; y++)
     {
         gameState->isWhiteTurns ? printw("\t%d |", (9 - (y + 1))) : printw("\t%d |", y + 1);
@@ -577,34 +590,59 @@ void render(const GameState *gameState, EventState *eventState)
         printw("\n");
     }
     gameState->isWhiteTurns ? printw("\t    a   b   c   d   e   f   g   h\n\n") : printw("\t    h   g   f   e   d   c   b   a\n\n");
-    // gameState->isWhiteTurns ? printw("White turns: \n") : printw("Black turns: \n");
+    gameState->isWhiteTurns ? printw("\n\nWhite turns: \n") : printw("\n\nBlack turns: \n");
+    clrtoeol();
 }
 
 void displayStartMenu()
 {
-    printw("--------------------------------WELCOME TO CHESS-------------------------------\n");
-    printw("CHESS IS A TWO PLAYER BOARD GAME\n");
-    printw("Author: 107802516 電機3B 邱士懿\n");
-    printw("\t                                                  _:_                     \n");
-    printw("\t                                                 '-.-'                    \n");
-    printw("\t                                        ()      __.'.__                   \n");
-    printw("\t                                     .-:--:-.  |_______|                  \n");
-    printw("\t                              ()      \\____/    \\=====/                 \n");
-    printw("\t                              /\\      {====}     )___(                   \n");
-    printw("\t                   (\\=,      //\\\\      )__(     /_____\\               \n");
-    printw("\t   __    |'-'-'|  //  .\\    (    )    /____\\     |   |                  \n");
-    printw("\t  /  \\   |_____| (( \\_  \\    )__(      |  |      |   |                 \n");
-    printw("\t  \\__/    |===|   ))  `\\_)  /____\\     |  |      |   |                 \n");
-    printw("\t /____\\   |   |  (/     \\    |  |      |  |      |   |                  \n");
-    printw("\t  |  |    |   |   | _.-'|    |  |      |  |      |   |                    \n");
-    printw("\t  |__|    )___(    )___(    /____\\    /____\\    /_____\\                \n");
-    printw("\t (====)  (=====)  (=====)  (======)  (======)  (=======)                  \n");
-    printw("\t }===={  }====={  }====={  }======{  }======{  }======={                  \n");
-    printw("\t(______)(_______)(_______)(________)(________)(_________)created by jgs    \n\n");
-    printAcceptableInputs();
-    printw("Press enter to continue...\n");
-    refresh();
-    getch();
+    printf("--------------------------------WELCOME TO CHESS-------------------------------\n");
+    printf("CHESS IS A TWO PLAYER BOARD GAME\n");
+    printf("Author: 107802516 電機3B 邱士懿\n");
+    printf("\t                                                  _:_                     \n");
+    printf("\t                                                 '-.-'                    \n");
+    printf("\t                                        ()      __.'.__                   \n");
+    printf("\t                                     .-:--:-.  |_______|                  \n");
+    printf("\t                              ()      \\____/    \\=====/                 \n");
+    printf("\t                              /\\      {====}     )___(                   \n");
+    printf("\t                   (\\=,      //\\\\      )__(     /_____\\               \n");
+    printf("\t   __    |'-'-'|  //  .\\    (    )    /____\\     |   |                  \n");
+    printf("\t  /  \\   |_____| (( \\_  \\    )__(      |  |      |   |                 \n");
+    printf("\t  \\__/    |===|   ))  `\\_)  /____\\     |  |      |   |                 \n");
+    printf("\t /____\\   |   |  (/     \\    |  |      |  |      |   |                  \n");
+    printf("\t  |  |    |   |   | _.-'|    |  |      |  |      |   |                    \n");
+    printf("\t  |__|    )___(    )___(    /____\\    /____\\    /_____\\                \n");
+    printf("\t (====)  (=====)  (=====)  (======)  (======)  (=======)                  \n");
+    printf("\t }===={  }====={  }====={  }======{  }======{  }======={                  \n");
+    printf("\t(______)(_______)(_______)(________)(________)(_________)created by jgs    \n\n");
+    printf("------------------------------------------------------------------------------\n");
+    printf("ACCEPTABLE INPUTS\n\n");
+    printf("<pos1> <pos2>\n");
+    printf("\tmove a piece from <pos1> to <pos2>.\n\n");
+    printf("<pos> promote\n");
+    printf("\tpromote a pawn to a queen at <pos>.\n\n");
+    printf("undo\n");
+    printf("\tget back to the previous action.\n\n");
+    printf("redo\n");
+    printf("\trecover the latest undo.\n\n");
+    printf("replay\n");
+    printf("\tsee the replay of the current game.\n\n");
+    printf("save\n");
+    printf("\tsave the game to a file.\n\n");
+    printf("load\n");
+    printf("\tload the game from a save file.\n\n");
+    printf("quit\n");
+    printf("\tquit the game.\n\n");
+    printf("restart\n");
+    printf("\trestart the game.\n\n");
+    printf("help\n");
+    printf("\tsee all acceptable inputs.\n\n");
+    printf("timer <float>\n");
+    printf("\tset the countdown timer to <float> sec.\n\n");
+    printf("The game does not support 'castle the king' and 'en passant'.\n");
+    printf("------------------------------------------------------------------------------\n");
+    printf("Press enter to continue...\n");
+    getchar();
 }
 
 bool displaySaveFilesMenu(const char **saveFiles, char *filename)
@@ -627,7 +665,8 @@ bool displaySaveFilesMenu(const char **saveFiles, char *filename)
 
     unsigned int num = 0;
     // if the input is valid
-    if (scanw("%u", &num) && num <= nFiles)
+    scanw("%u", &num);
+    if (num <= nFiles && num > 0)
     {
         strcpy(filename, saveFiles[num - 1]);
         return true;
@@ -661,7 +700,7 @@ void displayHelp()
     printAcceptableInputs();
     refresh();
     getch();
-    // pressEnterToContinue();
+    clear();
 }
 
 void processUndo(GameState *gameState, History *history)
@@ -682,25 +721,24 @@ void processRedo(GameState *gameState, History *history)
     }
 }
 
-void processQuit(WINDOW *inputWindow, GameState *gameState)
+void processQuit(GameState *gameState)
 {
-    wprintw(inputWindow, "--------------------------------------------------------\n");
-    wprintw(inputWindow, "Are you sure you want to quit the game?\n");
-    wprintw(inputWindow, "(Input 'y' to quit or press 'enter' to cancel...)\n");
-    wrefresh(inputWindow);
-    // CLEAR_INPUT_BUFFER();
+    char message[BUFFER_SIZE] = { 0 };
+    strcat(message, "Are you sure you want to quit the game?\n");
+    strcat(message, "(Press 'y' to quit or press any key to cancel...)\n");
+    displayMessage(message);
     char result = getch();
     if (result == 'y' || result == 'Y')
         gameState->finish = true;
+    clearMessage();
 }
 
-void processRestart(WINDOW *inputWindow, GameState *gameState, History *history)
+void processRestart(GameState *gameState, History *history)
 {
-    wprintw(inputWindow, "--------------------------------------------------------\n");
-    wprintw(inputWindow, "Are you sure you want to restart the game?\n");
-    wprintw(inputWindow, "(Input 'y' to restart or press 'enter' to cancel...)\n");
-    wrefresh(inputWindow);
-    // CLEAR_INPUT_BUFFER();
+    char message[BUFFER_SIZE] = { 0 };
+    strcat(message, "Are you sure you want to quit the game?\n");
+    strcat(message, "(Press 'y' to quit or press any key to cancel...)\n");
+    displayMessage(message);
     char result = getch();
     if (result == 'y' || result == 'Y')
     {
@@ -708,6 +746,7 @@ void processRestart(WINDOW *inputWindow, GameState *gameState, History *history)
         History__clear(history);
         init(gameState, history);
     }
+    clearMessage();
 }
 
 void processLoad(GameState *gameState, History *history)
@@ -728,18 +767,13 @@ void processLoad(GameState *gameState, History *history)
     }
     else
     {
-        printw("ERROR: Cannot open 'save' directory!\n");
-        getch();
-        // pressEnterToContinue();
+        displayMessage("ERROR: Cannot open 'save' directory!\n");
     }
 }
 
-void promptInvalid(WINDOW *inputWindow)
+void promptInvalid()
 {
-    wprintw(inputWindow, "Invalid Input! Please try again.\n");
-    wrefresh(inputWindow);
-    getch();
-    // pressEnterToContinue();
+    displayMessage("Invalid Input! Please try again.\n");
 }
 
 bool hasWinner(GameState *gameState)
@@ -748,14 +782,14 @@ bool hasWinner(GameState *gameState)
     return gameState->whiteRecord[King] <= 0 || gameState->blackRecord[King] <= 0;
 }
 
-void processWin(WINDOW *inputWindow, GameState *gameState, History *history)
+void processWin(GameState *gameState, History *history)
 {
     if (gameState->whiteRecord[King] <= 0)
-        wprintw(inputWindow, "CONGRATULATION, BLACK WINS\n");
+        printw("CONGRATULATION, BLACK WINS\n");
     if (gameState->blackRecord[King] <= 0)
-        wprintw(inputWindow, "CONGRATULATION, WHITE WINS\n");
-    wprintw(inputWindow, "Do you want to play again? (Press 'y' to play again or 'enter' to quit...)\n");
-    wrefresh(inputWindow);
+        printw("CONGRATULATION, WHITE WINS\n");
+    printw("Do you want to play again? (Press 'y' to play again or 'enter' to quit...)\n");
+    refresh();
     // CLEAR_INPUT_BUFFER();
     char result = getch();
     if (result == 'y' || result == 'Y')
@@ -768,4 +802,71 @@ void processWin(WINDOW *inputWindow, GameState *gameState, History *history)
     }
     else
         gameState->finish = true;
+}
+
+void processReplay(History *history)
+{
+    noecho();
+    cbreak();
+    int index = 0;
+    while (1)
+    {
+        const GameState *gameState = history->storage[index];
+        clear();
+        printw("-------------------------REPLAY-------------------------\n");
+        printw("Press A and D to control. Press Q to quit replay.\n\n");
+        // we render the board according to the player's perspective
+        // if the player is white, we render the '8' row first from top
+        // if the player is black, we render the '1' row first from top
+        // ...etc
+        printw("\t  _________________________________\n");
+        for (int y = 0; y < BOARD_SIZE; y++)
+        {
+            printw("\t%d |", (9 - (y + 1)));
+            for (int x = 0; x < BOARD_SIZE; x++)
+            {
+                int index = y * BOARD_SIZE + x;
+                switch (gameState->board[index].type)
+                {
+                case Pawn:
+                    gameState->board[index].isWhite ? printw(" P ") : printw(" p ");
+                    break;
+                case Knight:
+                    gameState->board[index].isWhite ? printw(" N ") : printw(" n ");
+                    break;
+                case Bishop:
+                    gameState->board[index].isWhite ? printw(" B ") : printw(" b ");
+                    break;
+                case Rook:
+                    gameState->board[index].isWhite ? printw(" R ") : printw(" r ");
+                    break;
+                case Queen:
+                    gameState->board[index].isWhite ? printw(" Q ") : printw(" q ");
+                    break;
+                case King:
+                    gameState->board[index].isWhite ? printw(" K ") : printw(" k ");
+                    break;
+                default:
+                    if (y % 2)
+                        index % 2 ? printw("___") : printw("###");
+                    else
+                        index % 2 ? printw("###") : printw("___");
+                    break;
+                }
+                printw("|");
+            }
+            printw("\n");
+        }
+        printw("\t    a   b   c   d   e   f   g   h\n\n");
+        refresh();
+        char c = getch();
+        if ((c == 'd' || c == 'D') && index < history->size - 1)
+            index++;
+        else if ((c == 'a' || c == 'A') && index > 0)
+            index--;
+        else if (c == 'q' || c== 'Q')
+            break;
+    }
+    echo();
+    // raw();
 }
