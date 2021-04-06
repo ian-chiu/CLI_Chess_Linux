@@ -690,7 +690,6 @@ void displayGoodbye()
     printw("\t  __/ |                         __/ |               \n");
     printw("\t |___/                         |___/                \n\n");
     refresh();
-    // pressEnterToContinue();
     getch();
 }
 
@@ -788,16 +787,13 @@ void processWin(GameState *gameState, History *history)
         printw("CONGRATULATION, BLACK WINS\n");
     if (gameState->blackRecord[King] <= 0)
         printw("CONGRATULATION, WHITE WINS\n");
-    printw("Do you want to play again? (Press 'y' to play again or 'enter' to quit...)\n");
+    displayMessage("Do you want to play again? (Press 'y' to play again or 'enter' to quit...)\n");
     refresh();
-    // CLEAR_INPUT_BUFFER();
     char result = getch();
     if (result == 'y' || result == 'Y')
     {
-        GameState__destroy(gameState);
-        History__destroy(history);
-        gameState = GameState__construct();
-        history = History__construct();
+        GameState__clear(gameState);
+        History__clear(history);
         init(gameState, history);
     }
     else
@@ -806,8 +802,8 @@ void processWin(GameState *gameState, History *history)
 
 void processReplay(History *history)
 {
-    noecho();
-    cbreak();
+    noecho();  // ncurses - get user input without showing
+    cbreak();  // ncurses - get user input without pressing enter
     int index = 0;
     while (1)
     {
@@ -815,10 +811,6 @@ void processReplay(History *history)
         clear();
         printw("-------------------------REPLAY-------------------------\n");
         printw("Press A and D to control. Press Q to quit replay.\n\n");
-        // we render the board according to the player's perspective
-        // if the player is white, we render the '8' row first from top
-        // if the player is black, we render the '1' row first from top
-        // ...etc
         printw("\t  _________________________________\n");
         for (int y = 0; y < BOARD_SIZE; y++)
         {
@@ -867,6 +859,5 @@ void processReplay(History *history)
         else if (c == 'q' || c== 'Q')
             break;
     }
-    echo();
-    // raw();
+    echo(); // ncurses - set back original settings
 }

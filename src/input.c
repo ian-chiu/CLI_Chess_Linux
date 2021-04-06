@@ -4,7 +4,7 @@
 #include <regex.h>
 #include <ctype.h>
 #include "input.h"
-#include "gameProps.h"
+#include "game.h"
 
 #include <ncurses.h>
 
@@ -27,8 +27,8 @@ InputProps getUserInput(char *inputStr)
     refresh();
 
     // ---------------input 1------------------
-    char input1[BUFFER_SIZE] = { '\0' };
-    char input2[BUFFER_SIZE] = { '\0' };
+    char input1[BUFFER_SIZE] = {'\0'};
+    char input2[BUFFER_SIZE] = {'\0'};
     sscanf(inputStr, "%s %s", input1, input2);
 
     // check if input1 is 'quit'
@@ -90,6 +90,8 @@ InputProps getUserInput(char *inputStr)
     if (strcmp(input1, "timer") == 0)
     {
         result.timer = atof(input2);
+
+        return result;
     }
 
     if (strlen(input1) == 2 && isalpha(input1[0]) && islower(input1[0]) && isdigit(input1[1]))
@@ -102,19 +104,15 @@ InputProps getUserInput(char *inputStr)
         if (result.from[0] - 'a' >= BOARD_SIZE || result.from[1] - '0' > BOARD_SIZE || result.from[1] == '0')
         {
             result.invalid = true;
-           printw("ERROR: Input out of range!\n");
+            printw("ERROR: Input out of range!\n");
             return result;
         }
     }
-    else 
+    else
     {
         result.invalid = true;
         return result;
     }
-
-    // ---------------input 2------------------
-    // char input2[BUFFER_SIZE] = { '\0' };
-    // scanw("%s", input2);
 
     // check if input2 is 'promote'
     if (strcmp(input2, "promote") == 0)
@@ -129,7 +127,7 @@ InputProps getUserInput(char *inputStr)
         result.castle = true;
         return result;
     }
-    
+
     if (strlen(input2) == 2 && isalpha(input2[0]) && islower(input2[0]) && isdigit(input2[1]))
     {
         // store second input position to result 'to'
@@ -137,13 +135,13 @@ InputProps getUserInput(char *inputStr)
         result.to[1] = input2[1];
         result.to[2] = '\0';
 
-        if (result.to[0] - 'a' >= BOARD_SIZE || result.to[1] - '0' > BOARD_SIZE  || result.to[1] == '0')
+        if (result.to[0] - 'a' >= BOARD_SIZE || result.to[1] - '0' > BOARD_SIZE || result.to[1] == '0')
         {
             result.invalid = true;
-           printw("ERROR: Input out of range!\n");
+            displayMessage("ERROR: Input out of range!\n");
         }
     }
-    else 
+    else
     {
         result.invalid = true;
     }

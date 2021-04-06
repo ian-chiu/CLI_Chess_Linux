@@ -20,4 +20,3 @@ void History__write(History *self, const GameState *gameState);
 GameState* History__undo(History *self);
 GameState* History__redo(History *self);
 void History__clear(History *self);
-// const GameState* History__pop(History *self);

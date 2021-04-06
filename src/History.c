@@ -78,12 +78,3 @@ void History__clear(History *self)
 {
     History__init(self);
 }
-
-// const GameState* History__pop(History *self)
-// {
-//     assert(!History__empty(self));
-//     const GameState *lastGameState = self->storage[self->size - 1];
-//     self->storage[self->size - 1] = NULL;
-//     self->size--;
-//     return lastGameState;
-// }
