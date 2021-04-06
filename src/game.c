@@ -665,7 +665,7 @@ bool displaySaveFilesMenu(const char **saveFiles, char *filename)
 
     unsigned int num = 0;
     // if the input is valid
-    scanw("%u", &num);
+    scanw("%d", &num);
     if (num <= nFiles && num > 0)
     {
         strcpy(filename, saveFiles[num - 1]);

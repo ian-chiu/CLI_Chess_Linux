@@ -5,8 +5,6 @@
 #include "GameState.h"
 #include "input.h"
 
-// #define ROUND_TIME 10.0
-
 typedef struct
 {
     double roundTime;

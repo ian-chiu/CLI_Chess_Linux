@@ -12,7 +12,7 @@
 #include <signal.h>
 
 volatile sig_atomic_t flag = 0;
-void press_Ctrl_C(int sig) 
+void pressCtrlC(int sig) 
 { // can be called asynchronously
     flag = 1; // set flag
 }
@@ -73,7 +73,7 @@ countdown_cb(struct ev_loop *loop, ev_timer *w, int revents)
 
 int main()
 {
-    signal(SIGINT, press_Ctrl_C); 
+    signal(SIGINT, pressCtrlC); 
 
     GameState *gameState = GameState__construct();
     History *history = History__construct();
