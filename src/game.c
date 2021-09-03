@@ -33,8 +33,8 @@ static void printAcceptableInputs()
     printw("\trestart the game.\n\n");
     printw("help\n");
     printw("\tsee all acceptable inputs.\n\n");
-    printw("timer <float>\n");
-    printw("\tset the countdown timer to <float> sec.\n\n");
+    printw("timer <num>\n");
+    printw("\tset the countdown timer to <num> sec.\n\n");
     printw("The game does not support 'castle the king' and 'en passant'.\n");
     printw("------------------------------------------------------------------------------\n");
 }
@@ -531,7 +531,8 @@ bool movePiece(const InputProps *input, GameState *gameState, History *history)
 void render(const GameState *gameState, EventState *eventState)
 {
     move(0, 0);
-    printw("%f sec left...\n\n\n", eventState->countdown);
+    // we define the accuracy of the time is 1 second, so we do not care about floating point digits
+    printw("%d sec left...\n\n\n", (int)eventState->countdown);
     printw("Black left: px%d nx%d bx%d rx%d qx%d kx%d\n",
            gameState->blackRecord[Pawn],
            gameState->blackRecord[Knight],
@@ -637,8 +638,8 @@ void displayStartMenu()
     printf("\trestart the game.\n\n");
     printf("help\n");
     printf("\tsee all acceptable inputs.\n\n");
-    printf("timer <float>\n");
-    printf("\tset the countdown timer to <float> sec.\n\n");
+    printf("timer <num>\n");
+    printf("\tset the countdown timer to <num> sec.\n\n");
     printf("The game does not support 'castle the king' and 'en passant'.\n");
     printf("------------------------------------------------------------------------------\n");
     printf("Press enter to continue...\n");
@@ -804,10 +805,10 @@ void processReplay(History *history)
 {
     noecho();  // ncurses - get user input without showing
     cbreak();  // ncurses - get user input without pressing enter
-    int index = 0;
+    Node *curr = history->head;
     while (1)
     {
-        const GameState *gameState = history->storage[index];
+        const GameState *gameState = curr->gameState;
         clear();
         printw("-------------------------REPLAY-------------------------\n");
         printw("Press A and D to control. Press Q to quit replay.\n\n");
@@ -852,10 +853,10 @@ void processReplay(History *history)
         printw("\t    a   b   c   d   e   f   g   h\n\n");
         refresh();
         char c = getch();
-        if ((c == 'd' || c == 'D') && index < history->size - 1)
-            index++;
-        else if ((c == 'a' || c == 'A') && index > 0)
-            index--;
+        if ((c == 'd' || c == 'D') && curr->next != NULL)
+            curr = curr->next;
+        else if ((c == 'a' || c == 'A') && curr != history->head)
+            curr = curr->prev;
         else if (c == 'q' || c== 'Q')
             break;
     }

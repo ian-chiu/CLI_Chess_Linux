@@ -90,7 +90,8 @@ InputProps getUserInput(char *inputStr)
     if (strcmp(input1, "timer") == 0)
     {
         result.timer = atof(input2);
-
+        if (result.timer == 0) 
+            result.invalid = true;
         return result;
     }
 

@@ -1,15 +1,26 @@
 #pragma once
 
 #include "GameState.h"
-#define MAXHISTORY 10000
+
+// The data structure of History is a double linked list
+
+struct Node
+{
+    GameState *gameState;
+    struct Node *next;
+    struct Node *prev;
+};
+
+typedef struct Node Node;
 
 typedef struct
 {
-    GameState* storage[MAXHISTORY];
-    int currentIdx;
-    int size;
+    Node *head;
+    Node *curr;
 } History;
 
+Node* Node__construct();
+void Node__destroy(Node *self);
 History* History__construct();
 void History__destroy(History *self);
 bool History__empty(History *self);

@@ -12,7 +12,7 @@
 #include <signal.h>
 
 volatile sig_atomic_t flag = 0;
-void pressCtrlC(int sig) 
+void stopProcessInterrupt(int sig) 
 { // can be called asynchronously
     flag = 1; // set flag
 }
@@ -60,6 +60,8 @@ countdown_cb(struct ev_loop *loop, ev_timer *w, int revents)
 {
     EventState *eventStatePtr = (EventState*)w->data;
     eventStatePtr->countdown--;
+    
+    // the accuracy of the time is 1 second, so if the countdowsn is less than 1 second we say the time is up
     if (eventStatePtr->countdown < 1.0f) 
     {
         eventStatePtr->timesup = true;
@@ -68,12 +70,13 @@ countdown_cb(struct ev_loop *loop, ev_timer *w, int revents)
     }
     render(eventStatePtr->gameStatePtr, eventStatePtr);
     refresh();
+    w->repeat = 1.0;
     ev_timer_again(loop, w);
 }
 
 int main()
 {
-    signal(SIGINT, pressCtrlC); 
+    signal(SIGINT, stopProcessInterrupt); 
 
     GameState *gameState = GameState__construct();
     History *history = History__construct();
@@ -175,13 +178,13 @@ int main()
             }
             else if (input.timer)
             {
-                if (input.timer > 10.0f) 
+                if (input.timer > 10.0f && input.timer < 100000.0f) 
                 {
                     eventState.roundTime = input.timer;
                     eventState.countdown = eventState.roundTime + 1;
                 }
                 else 
-                    displayMessage("The timer must set greater than 10.0 seconds!");
+                    displayMessage("The timer must set greater than 10.0 and less than 100000 seconds!");
             }
             else if (!input.invalid)
             {
@@ -200,7 +203,7 @@ int main()
         // clear from the current line to the end of screen
         clrtobot();
 
-        // if ctrl-c is pressed, end ncurses and stop the game.
+        // if ctrl-c or ctrl-z is pressed, end ncurses and stop the game.
         // without doing this, terminal will be messed up.
         if(flag)
         {
